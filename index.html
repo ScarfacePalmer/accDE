@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Verkehrslage – Unfälle</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .accident-icon {
+            width: 18px;
+            height: 18px;
+            background: #d71920;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+        }
+
+        .leaflet-tooltip {
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .title-box {
+            position: absolute;
+            z-index: 1000;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+
+        .status-box {
+            position: absolute;
+            z-index: 1000;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 7px 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.25);
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="title-box">
+    🚨 Aktuelle Unfallmeldungen
+</div>
+
+<div id="map"></div>
+
+<div class="status-box" id="status">
+    Lade Unfallmeldungen …
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const API_URL =
+    "https://accde-api.r73d.workers.dev/api/accidents";
+
+
+// Deutschland als Startansicht
+const map = L.map("map").setView([51.1657, 10.4515], 6);
+
+
+// Esri World Street Map
+L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom: 19,
+        attribution:
+            "Tiles © Esri — Source: Esri, Garmin, FAO, NOAA, USGS"
+    }
+).addTo(map);
+
+
+const accidentLayer = L.layerGroup().addTo(map);
+
+
+function createAccidentIcon() {
+
+    return L.divIcon({
+        className: "",
+        html: '<div class="accident-icon"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+    });
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "unbekannt";
+    }
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString(
+        "de-DE",
+        {
+            dateStyle: "short",
+            timeStyle: "medium"
+        }
+    );
+}
+
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+function createTooltip(accident) {
+
+    const city =
+        escapeHtml(accident.city) || "unbekannt";
+
+    const street =
+        escapeHtml(accident.street) || "unbekannt";
+
+    const reliability =
+        escapeHtml(accident.reliability) || "unbekannt";
+
+    return `
+        <strong>${city}</strong><br>
+        Straße: ${street}<br>
+        Zuverlässigkeit: ${reliability}<br>
+        Meldung: ${formatDate(accident.created_at)}<br>
+        Bestätigt: ${formatDate(accident.confirmed_at)}
+    `;
+}
+
+
+
+async function loadAccidents() {
+
+    const status =
+        document.getElementById("status");
+
+    try {
+
+        status.textContent =
+            "Lade Unfallmeldungen …";
+
+        const response =
+            await fetch(API_URL, {
+                cache: "no-store"
+            });
+
+        if (!response.ok) {
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.error || "API-Fehler"
+            );
+        }
+
+
+
+        accidentLayer.clearLayers();
+
+
+
+        for (const accident of data.accidents) {
+
+            if (
+                typeof accident.latitude !== "number" ||
+                typeof accident.longitude !== "number"
+            ) {
+                continue;
+            }
+
+
+            const marker = L.marker(
+                [
+                    accident.latitude,
+                    accident.longitude
+                ],
+                {
+                    icon: createAccidentIcon()
+                }
+            );
+
+
+            marker.bindTooltip(
+                createTooltip(accident),
+                {
+                    direction: "top",
+                    sticky: true,
+                    opacity: 0.95
+                }
+            );
+
+
+            marker.addTo(accidentLayer);
+        }
+
+
+        status.textContent =
+            `${data.count} aktuelle Unfallmeldungen`;
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Fehler beim Laden der Unfallmeldungen";
+    }
+}
+
+
+
+loadAccidents();
+
+
+
+setInterval(
+    loadAccidents,
+    5 * 60 * 1000
+);
+
+</script>
+
+</body>
+</html>
