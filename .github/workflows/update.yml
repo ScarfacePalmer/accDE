@@ -2,8 +2,6 @@ name: Unfall-Daten aktualisieren
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
 
 jobs:
   update:
