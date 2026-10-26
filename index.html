@@ -12,6 +12,7 @@
     >
 
     <style>
+
         html,
         body {
             margin: 0;
@@ -26,27 +27,37 @@
             height: 100%;
         }
 
-        /* Bedienfeld */
+
+        /* ==========================================
+           BUTTONS
+           ========================================== */
 
         .controls {
             position: absolute;
-            z-index: 1000;
+            z-index: 2000;
+
             top: 10px;
             left: 10px;
 
             background: white;
-            padding: 6px;
+
+            padding: 5px;
 
             border-radius: 7px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+
+            box-shadow:
+                0 2px 8px rgba(0,0,0,0.3);
 
             display: flex;
             gap: 5px;
         }
 
+
         .controls button {
+
             border: none;
-            padding: 9px 13px;
+
+            padding: 9px 14px;
 
             border-radius: 5px;
 
@@ -55,25 +66,37 @@
             cursor: pointer;
 
             font-weight: bold;
+
             font-size: 13px;
         }
 
+
         .controls button:hover {
+
             background: #dddddd;
         }
 
+
         .controls button.active {
+
             background: #1976d2;
+
             color: white;
         }
 
-        /* Überschrift */
+
+        /* ==========================================
+           TITEL
+           ========================================== */
 
         .title-box {
+
             position: absolute;
-            z-index: 1000;
+
+            z-index: 2000;
 
             top: 10px;
+
             left: 50%;
 
             transform: translateX(-50%);
@@ -84,18 +107,25 @@
 
             border-radius: 6px;
 
-            box-shadow: 0 2px 7px rgba(0,0,0,0.3);
+            box-shadow:
+                0 2px 7px rgba(0,0,0,0.3);
 
             font-weight: bold;
         }
 
-        /* Status */
+
+        /* ==========================================
+           STATUS
+           ========================================== */
 
         .status-box {
+
             position: absolute;
-            z-index: 1000;
+
+            z-index: 2000;
 
             bottom: 10px;
+
             left: 10px;
 
             background: white;
@@ -104,43 +134,125 @@
 
             border-radius: 5px;
 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            box-shadow:
+                0 2px 6px rgba(0,0,0,0.25);
 
             font-size: 12px;
         }
 
-        /* Unfallmarker */
 
-        .accident-icon {
-            width: 18px;
-            height: 18px;
+        /* ==========================================
+           UNFALL-WARNDREIECK
+           ========================================== */
 
-            background: #d71920;
+        .accident-marker {
 
-            border: 2px solid white;
+            position: relative;
 
-            border-radius: 50%;
+            width: 30px;
 
-            box-shadow:
-                0 1px 5px rgba(0,0,0,0.6);
+            height: 27px;
+
+            filter:
+                drop-shadow(
+                    0 2px 3px rgba(0,0,0,0.55)
+                );
         }
 
-        /* Mouseover */
+
+        .accident-marker::before {
+
+            content: "";
+
+            position: absolute;
+
+            left: 1px;
+
+            top: 0;
+
+            width: 0;
+
+            height: 0;
+
+            border-left: 14px solid transparent;
+
+            border-right: 14px solid transparent;
+
+            border-bottom: 26px solid var(--marker-color);
+        }
+
+
+        .accident-marker::after {
+
+            content: "!";
+
+            position: absolute;
+
+            left: 0;
+
+            top: 3px;
+
+            width: 30px;
+
+            text-align: center;
+
+            color: white;
+
+            font-weight: bold;
+
+            font-size: 17px;
+
+            line-height: 22px;
+
+            text-shadow:
+                0 1px 1px rgba(0,0,0,0.4);
+        }
+
+
+        /* Aktuell */
+
+        .accident-current {
+
+            --marker-color: #d71920;
+        }
+
+
+        /* Beendet */
+
+        .accident-ended {
+
+            --marker-color: #777777;
+        }
+
+
+        /* ==========================================
+           TOOLTIPS
+           ========================================== */
 
         .leaflet-tooltip {
+
             font-size: 13px;
+
             line-height: 1.45;
         }
 
+
         .tooltip-title {
+
             font-weight: bold;
+
             font-size: 14px;
-            margin-bottom: 3px;
+
+            margin-bottom: 4px;
         }
+
     </style>
+
 </head>
 
+
 <body>
+
 
 <div class="controls">
 
@@ -152,6 +264,7 @@
         AKTUELL
     </button>
 
+
     <button
         id="dayButton"
         onclick="setMode('24h')"
@@ -161,11 +274,16 @@
 
 </div>
 
+
 <div class="title-box">
+
     🚨 Unfallmeldungen Deutschland
+
 </div>
 
+
 <div id="map"></div>
+
 
 <div
     class="status-box"
@@ -175,45 +293,47 @@
 </div>
 
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
 
 
 <script>
 
-// ============================================================
+
+// ==========================================================
 // KONFIGURATION
-// ============================================================
+// ==========================================================
 
 const API_URL =
     "https://accde-api.r73d.workers.dev/api/accidents";
 
 
-// Deutschland-GeoJSON
 const GERMANY_GEOJSON =
     "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/1_deutschland/1_deutschland_low.geo.json";
 
 
-// Aktueller Modus
 let currentMode = "current";
 
 
-// Layer für Unfälle
 const accidentLayer =
     L.layerGroup();
 
 
-// Layer für Deutschlandmaske
 const germanyLayer =
     L.layerGroup();
 
 
-// ============================================================
+// ==========================================================
 // KARTE
-// ============================================================
+// ==========================================================
 
 const map = L.map("map", {
 
-    center: [51.1657, 10.4515],
+    center: [
+        51.1657,
+        10.4515
+    ],
 
     zoom: 6,
 
@@ -223,40 +343,45 @@ const map = L.map("map", {
 });
 
 
-// ============================================================
+// ==========================================================
 // KARTENKACHELN
-// ============================================================
+// ==========================================================
 
 L.tileLayer(
+
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+
     {
+
         maxZoom: 19,
 
         attribution:
             "Tiles © Esri — Source: Esri, Garmin, FAO, NOAA, USGS"
     }
+
 ).addTo(map);
 
 
-// ============================================================
-// LAYER HINZUFÜGEN
-// ============================================================
+// Layer-Reihenfolge
 
 germanyLayer.addTo(map);
 
 accidentLayer.addTo(map);
 
 
-// ============================================================
-// DEUTSCHLAND-MASKE
-// ============================================================
+// ==========================================================
+// DEUTSCHLAND + AUSLANDSMASKE
+// ==========================================================
 
 async function loadGermanyMask() {
 
     try {
 
         const response =
-            await fetch(GERMANY_GEOJSON);
+            await fetch(
+                GERMANY_GEOJSON
+            );
+
 
         if (!response.ok) {
 
@@ -265,93 +390,138 @@ async function loadGermanyMask() {
             );
         }
 
+
         const germany =
             await response.json();
 
 
-        // Deutschland selbst normal darstellen
-        L.geoJSON(
-            germany,
-            {
+        // ----------------------------------------------
+        // Grenzen auslesen
+        // ----------------------------------------------
 
-                style: {
+        let germanyPolygons = [];
 
-                    color: "#333333",
 
-                    weight: 2,
+        if (
+            germany.type === "FeatureCollection"
+        ) {
 
-                    fillColor: "#ffffff",
+            for (
+                const feature
+                of germany.features
+            ) {
 
-                    fillOpacity: 0.02
-                },
+                if (
+                    feature.geometry &&
+                    feature.geometry.type === "Polygon"
+                ) {
 
-                interactive: false
+                    germanyPolygons.push(
+                        feature.geometry.coordinates
+                    );
+
+                }
+
+                else if (
+                    feature.geometry &&
+                    feature.geometry.type === "MultiPolygon"
+                ) {
+
+                    germanyPolygons.push(
+                        ...feature.geometry.coordinates
+                    );
+                }
             }
 
-        ).addTo(germanyLayer);
+        }
+
+        else if (
+            germany.type === "Feature"
+        ) {
+
+            if (
+                germany.geometry.type === "Polygon"
+            ) {
+
+                germanyPolygons.push(
+                    germany.geometry.coordinates
+                );
+
+            }
+
+            else if (
+                germany.geometry.type === "MultiPolygon"
+            ) {
+
+                germanyPolygons.push(
+                    ...germany.geometry.coordinates
+                );
+            }
+        }
 
 
-        // ----------------------------------------------------
-        // Graue Fläche außerhalb Deutschlands
-        // ----------------------------------------------------
+        // ----------------------------------------------
+        // Weltfläche
+        // ----------------------------------------------
 
-        // Großer Bereich rund um Deutschland
-        const outerRing = [
+        const world = [
 
-            [90, -180],
+            [
+                [90, -180],
+                [90, 180],
+                [-90, 180],
+                [-90, -180],
+                [90, -180]
+            ]
 
-            [90, 180],
-
-            [-90, 180],
-
-            [-90, -180],
-
-            [90, -180]
         ];
 
 
-        /*
-         * GeoJSON unterstützt bei Polygonen Innenringe.
-         * Der Deutschland-Umriss wird als Loch verwendet.
-         */
+        // ----------------------------------------------
+        // Deutschland als Loch
+        // ----------------------------------------------
 
-        let germanyCoordinates;
+        const holes = [];
 
 
-        if (germany.geometry.type === "Polygon") {
+        for (
+            const polygon
+            of germanyPolygons
+        ) {
 
-            germanyCoordinates =
-                germany.geometry.coordinates;
+            if (
+                polygon.length > 0
+            ) {
 
+                holes.push(
+                    polygon[0]
+                );
+            }
         }
 
-        else if (germany.geometry.type === "MultiPolygon") {
 
-            // Für MultiPolygon werden alle deutschen
-            // Teilflächen als Innenflächen verwendet.
+        // ----------------------------------------------
+        // Ausland ausgrauen
+        // ----------------------------------------------
 
-            germanyCoordinates =
-                germany.geometry.coordinates.flat();
-        }
-
-
-        if (germanyCoordinates) {
-
-            const maskCoordinates = [
-                outerRing,
-                ...germanyCoordinates
-            ];
-
+        if (
+            holes.length > 0
+        ) {
 
             L.polygon(
-                maskCoordinates,
+
+                [
+                    world[0],
+                    ...holes
+                ],
+
                 {
 
                     stroke: false,
 
-                    fillColor: "#888888",
+                    fillColor: "#666666",
 
-                    fillOpacity: 0.45,
+                    fillOpacity: 0.48,
 
                     interactive: false
                 }
@@ -360,16 +530,21 @@ async function loadGermanyMask() {
         }
 
 
-        // Deutschlandgrenze nochmals oben drauf
+        // ----------------------------------------------
+        // Deutschlandgrenze
+        // ----------------------------------------------
+
         L.geoJSON(
+
             germany,
+
             {
 
                 style: {
 
-                    color: "#333333",
+                    color: "#222222",
 
-                    weight: 2,
+                    weight: 2.5,
 
                     fill: false
                 },
@@ -380,41 +555,83 @@ async function loadGermanyMask() {
         ).addTo(germanyLayer);
 
 
-    } catch (error) {
+        // ----------------------------------------------
+        // Deutschland automatisch einpassen
+        // ----------------------------------------------
+
+        const bounds =
+            L.geoJSON(
+                germany
+            ).getBounds();
+
+
+        map.fitBounds(
+
+            bounds,
+
+            {
+
+                padding: [
+                    20,
+                    20
+                ]
+            }
+        );
+
+
+    }
+
+    catch (error) {
 
         console.error(
-            "Fehler bei Deutschlandkarte:",
+            "Deutschlandmaske:",
             error
         );
     }
 }
 
 
-// ============================================================
-// UNFALL-ICON
-// ============================================================
+// ==========================================================
+// UNFALLMARKER
+// ==========================================================
 
-function createAccidentIcon() {
+function createAccidentIcon(
+    ended
+) {
+
+    const className =
+        ended
+            ? "accident-marker accident-ended"
+            : "accident-marker accident-current";
+
 
     return L.divIcon({
 
         className: "",
 
         html:
-            '<div class="accident-icon"></div>',
+            `<div class="${className}"></div>`,
 
-        iconSize: [22, 22],
+        iconSize: [
+            30,
+            27
+        ],
 
-        iconAnchor: [11, 11]
+        iconAnchor: [
+            15,
+            27
+        ]
     });
 }
 
 
-// ============================================================
-// DATUM FORMATIEREN
-// ============================================================
+// ==========================================================
+// DATUM
+// ==========================================================
 
-function formatDate(value) {
+function formatDate(
+    value
+) {
 
     if (!value) {
 
@@ -426,14 +643,20 @@ function formatDate(value) {
         new Date(value);
 
 
-    if (isNaN(date.getTime())) {
+    if (
+        isNaN(
+            date.getTime()
+        )
+    ) {
 
         return value;
     }
 
 
     return date.toLocaleString(
+
         "de-DE",
+
         {
 
             dateStyle: "short",
@@ -444,11 +667,13 @@ function formatDate(value) {
 }
 
 
-// ============================================================
+// ==========================================================
 // HTML ESCAPEN
-// ============================================================
+// ==========================================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     if (
         value === null ||
@@ -488,25 +713,31 @@ function escapeHtml(value) {
 }
 
 
-// ============================================================
-// MOUSEOVER-INFORMATIONEN
-// ============================================================
+// ==========================================================
+// TOOLTIP
+// ==========================================================
 
-function createTooltip(accident) {
+function createTooltip(
+    accident
+) {
 
     const city =
-        escapeHtml(accident.city)
-        || "unbekannt";
+        escapeHtml(
+            accident.city
+        ) ||
+        "unbekannt";
 
 
     const street =
-        escapeHtml(accident.street)
-        || "unbekannt";
+        escapeHtml(
+            accident.street
+        ) ||
+        "unbekannt";
 
 
-    // --------------------------------------------------------
+    // ==============================================
     // AKTUELL
-    // --------------------------------------------------------
+    // ==============================================
 
     if (
         currentMode === "current" ||
@@ -516,7 +747,8 @@ function createTooltip(accident) {
         const reliability =
             escapeHtml(
                 accident.reliability
-            ) || "unbekannt";
+            ) ||
+            "unbekannt";
 
 
         return `
@@ -551,9 +783,9 @@ function createTooltip(accident) {
     }
 
 
-    // --------------------------------------------------------
-    // BEENDETE MELDUNG – 24 H
-    // --------------------------------------------------------
+    // ==============================================
+    // BEENDET
+    // ==============================================
 
     return `
 
@@ -582,9 +814,9 @@ function createTooltip(accident) {
 }
 
 
-// ============================================================
+// ==========================================================
 // UNFÄLLE LADEN
-// ============================================================
+// ==========================================================
 
 async function loadAccidents() {
 
@@ -602,12 +834,15 @@ async function loadAccidents() {
 
         const response =
             await fetch(
+
                 API_URL +
                 "?mode=" +
                 encodeURIComponent(
                     currentMode
                 ),
+
                 {
+
                     cache: "no-store"
                 }
             );
@@ -643,9 +878,9 @@ async function loadAccidents() {
         let markerCount = 0;
 
 
-        // ----------------------------------------------------
-        // MARKER ERZEUGEN
-        // ----------------------------------------------------
+        // ==============================================
+        // MARKER
+        // ==============================================
 
         for (
             const accident
@@ -665,8 +900,6 @@ async function loadAccidents() {
                 );
 
 
-            // Keine gültigen Koordinaten
-
             if (
                 !Number.isFinite(
                     latitude
@@ -680,6 +913,12 @@ async function loadAccidents() {
             }
 
 
+            const ended =
+                Boolean(
+                    accident.removed_at
+                );
+
+
             const marker =
                 L.marker(
 
@@ -691,7 +930,9 @@ async function loadAccidents() {
                     {
 
                         icon:
-                            createAccidentIcon()
+                            createAccidentIcon(
+                                ended
+                            )
                     }
                 );
 
@@ -708,7 +949,7 @@ async function loadAccidents() {
 
                     sticky: true,
 
-                    opacity: 0.95
+                    opacity: 0.96
                 }
             );
 
@@ -722,17 +963,21 @@ async function loadAccidents() {
         }
 
 
-        // ----------------------------------------------------
+        // ==============================================
         // STATUS
-        // ----------------------------------------------------
+        // ==============================================
 
-        if (currentMode === "current") {
+        if (
+            currentMode === "current"
+        ) {
 
             status.textContent =
                 markerCount +
                 " aktuelle Unfallmeldungen";
 
-        } else {
+        }
+
+        else {
 
             status.textContent =
                 markerCount +
@@ -740,9 +985,13 @@ async function loadAccidents() {
         }
 
 
-    } catch (error) {
+    }
 
-        console.error(error);
+    catch (error) {
+
+        console.error(
+            error
+        );
 
 
         status.textContent =
@@ -751,11 +1000,13 @@ async function loadAccidents() {
 }
 
 
-// ============================================================
-// MODUS WECHSELN
-// ============================================================
+// ==========================================================
+// MODUS
+// ==========================================================
 
-function setMode(mode) {
+function setMode(
+    mode
+) {
 
     currentMode =
         mode;
@@ -773,7 +1024,9 @@ function setMode(mode) {
         );
 
 
-    if (mode === "current") {
+    if (
+        mode === "current"
+    ) {
 
         currentButton.classList.add(
             "active"
@@ -783,7 +1036,9 @@ function setMode(mode) {
             "active"
         );
 
-    } else {
+    }
+
+    else {
 
         currentButton.classList.remove(
             "active"
@@ -799,18 +1054,18 @@ function setMode(mode) {
 }
 
 
-// ============================================================
+// ==========================================================
 // START
-// ============================================================
+// ==========================================================
 
 loadGermanyMask();
 
 loadAccidents();
 
 
-// ============================================================
-// ALLE 5 MINUTEN AKTUALISIEREN
-// ============================================================
+// ==========================================================
+// AUTOMATISCHE AKTUALISIERUNG
+// ==========================================================
 
 setInterval(
 
