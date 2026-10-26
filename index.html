@@ -67,13 +67,17 @@ body {
   line-height: 1.7;
 }
 
-.legend span {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+.legend-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+}
+
+.legend-warning {
+  width: 22px;
+  height: 22px;
   margin-right: 5px;
-  vertical-align: -1px;
+  flex-shrink: 0;
 }
 
 .accident-popup {
@@ -106,15 +110,74 @@ body {
   </button>
 
   <div class="legend">
-    <div>
-      <span style="background:#d32f2f"></span>
+
+    <div class="legend-row">
+
+      <svg class="legend-warning"
+           viewBox="0 0 46 46"
+           xmlns="http://www.w3.org/2000/svg">
+
+        <path
+          d="M23 2 L44 40 Q46 44 41 44 H5 Q0 44 2 40 Z"
+          fill="#d32f2f"
+          stroke="white"
+          stroke-width="3"
+          stroke-linejoin="round"/>
+
+        <rect
+          x="20.5"
+          y="13"
+          width="5"
+          height="17"
+          rx="2.5"
+          fill="white"/>
+
+        <circle
+          cx="23"
+          cy="36"
+          r="2.8"
+          fill="white"/>
+
+      </svg>
+
       aktuelle Meldung
+
     </div>
 
-    <div>
-      <span style="background:#777"></span>
+
+    <div class="legend-row">
+
+      <svg class="legend-warning"
+           viewBox="0 0 46 46"
+           xmlns="http://www.w3.org/2000/svg">
+
+        <path
+          d="M23 2 L44 40 Q46 44 41 44 H5 Q0 44 2 40 Z"
+          fill="#777777"
+          stroke="white"
+          stroke-width="3"
+          stroke-linejoin="round"/>
+
+        <rect
+          x="20.5"
+          y="13"
+          width="5"
+          height="17"
+          rx="2.5"
+          fill="white"/>
+
+        <circle
+          cx="23"
+          cy="36"
+          r="2.8"
+          fill="white"/>
+
+      </svg>
+
       beendete Meldung
+
     </div>
+
   </div>
 
   <div id="status">
@@ -130,20 +193,33 @@ body {
 <script>
 "use strict";
 
+
 /*
+ * ============================================================
  * Cloudflare Worker / API
+ * ============================================================
  */
+
 const API_URL =
   "https://accde-api.r73d.workers.dev/";
 
 
 /*
+ * ============================================================
  * Karte
+ * ============================================================
  */
+
 const map = L.map("map", {
+
   zoomControl: true,
+
   preferCanvas: false
-}).setView([51.1657, 10.4515], 6);
+
+}).setView(
+  [51.1657, 10.4515],
+  6
+);
 
 
 L.tileLayer(
@@ -156,10 +232,11 @@ L.tileLayer(
 
 
 /*
- * Deutschland-Zentrum / Ausschnitt
+ * Deutschland-Ausschnitt
  *
- * Es wird absichtlich KEINE Deutschland-Maske geladen.
+ * Keine Deutschland-Maske.
  */
+
 const germanyBounds = L.latLngBounds(
   [47.15, 5.80],
   [55.15, 15.15]
@@ -169,9 +246,13 @@ map.fitBounds(germanyBounds);
 
 
 /*
- * Marker-Layer
+ * ============================================================
+ * Globale Variablen
+ * ============================================================
  */
-let markerLayer = L.layerGroup().addTo(map);
+
+let markerLayer =
+  L.layerGroup().addTo(map);
 
 let allAccidents = [];
 
@@ -179,22 +260,50 @@ let mode = "current";
 
 
 /*
+ * ============================================================
  * Hilfsfunktionen
+ * ============================================================
  */
+
 function escapeHtml(value) {
 
   return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 }
 
 
-function firstValue(obj, names) {
+function firstValue(
+  obj,
+  names
+) {
 
-  for (const name of names) {
+  for (
+    const name of names
+  ) {
 
     if (
       obj &&
@@ -202,6 +311,7 @@ function firstValue(obj, names) {
       obj[name] !== null &&
       obj[name] !== ""
     ) {
+
       return obj[name];
     }
   }
@@ -216,19 +326,29 @@ function toNumber(value) {
     typeof value === "number" &&
     Number.isFinite(value)
   ) {
+
     return value;
   }
 
-  if (typeof value === "string") {
 
-    const n = Number(
-      value.replace(",", ".")
-    );
+  if (
+    typeof value === "string"
+  ) {
 
-    if (Number.isFinite(n)) {
+    const n =
+      Number(
+        value.replace(",", ".")
+      );
+
+
+    if (
+      Number.isFinite(n)
+    ) {
+
       return n;
     }
   }
+
 
   return null;
 }
@@ -240,11 +360,20 @@ function parseDate(value) {
     return null;
   }
 
-  const d = new Date(value);
 
-  if (!Number.isNaN(d.getTime())) {
+  const d =
+    new Date(value);
+
+
+  if (
+    !Number.isNaN(
+      d.getTime()
+    )
+  ) {
+
     return d;
   }
+
 
   return null;
 }
@@ -252,88 +381,123 @@ function parseDate(value) {
 
 function formatDate(value) {
 
-  const d = parseDate(value);
+  const d =
+    parseDate(value);
+
 
   if (!d) {
+
     return value
       ? escapeHtml(value)
       : "nicht angegeben";
   }
 
-  return d.toLocaleString("de-DE", {
-    dateStyle: "short",
-    timeStyle: "medium"
-  });
+
+  return d.toLocaleString(
+    "de-DE",
+    {
+      dateStyle: "short",
+      timeStyle: "medium"
+    }
+  );
 }
 
 
 /*
- * Ende einer Meldung ermitteln
+ * ============================================================
+ * Anfang / Ende
+ * ============================================================
  */
+
 function getEndedAt(a) {
 
-  return firstValue(a, [
+  return firstValue(
+    a,
+    [
 
-    "endedAt",
-    "ended_at",
+      "endedAt",
 
-    "endAt",
-    "end_at",
+      "ended_at",
 
-    "finishedAt",
-    "finished_at",
+      "endAt",
 
-    "removedAt",
-    "removed_at"
+      "end_at",
 
-  ]);
+      "finishedAt",
+
+      "finished_at",
+
+      "removedAt",
+
+      "removed_at"
+
+    ]
+  );
 }
 
 
-/*
- * Beginn einer Meldung ermitteln
- */
 function getCreatedAt(a) {
 
-  return firstValue(a, [
+  return firstValue(
+    a,
+    [
 
-    "createdAt",
-    "created_at",
+      "createdAt",
 
-    "firstSeen",
-    "first_seen",
+      "created_at",
 
-    "timestamp",
-    "time"
+      "firstSeen",
 
-  ]);
+      "first_seen",
+
+      "timestamp",
+
+      "time"
+
+    ]
+  );
 }
 
 
 /*
- * Prüfen, ob Meldung beendet wurde
+ * ============================================================
+ * Status
+ * ============================================================
  */
+
 function isEnded(a) {
 
-  const ended = getEndedAt(a);
+  const ended =
+    getEndedAt(a);
 
-  if (ended) {
+
+  if (
+    ended
+  ) {
+
     return true;
   }
 
 
-  /*
-   * Falls der Worker ein Statusfeld liefert
-   */
-  const status = firstValue(a, [
-    "status",
-    "state"
-  ]);
+  const status =
+    firstValue(
+      a,
+      [
+        "status",
+        "state"
+      ]
+    );
 
-  if (status) {
+
+  if (
+    status
+  ) {
 
     const s =
-      String(status).toLowerCase();
+      String(
+        status
+      ).toLowerCase();
+
 
     if (
       [
@@ -345,23 +509,32 @@ function isEnded(a) {
         "beendet"
       ].includes(s)
     ) {
+
       return true;
     }
   }
+
 
   return false;
 }
 
 
 /*
- * API-Antwort vereinheitlichen
+ * ============================================================
+ * API-Antwort
+ * ============================================================
  */
+
 function normalizeResponse(data) {
 
   /*
-   * API liefert direkt ein Array
+   * Direktes Array
    */
-  if (Array.isArray(data)) {
+
+  if (
+    Array.isArray(data)
+  ) {
+
     return data;
   }
 
@@ -369,56 +542,74 @@ function normalizeResponse(data) {
   /*
    * GeoJSON
    */
+
   if (
     data &&
-    Array.isArray(data.features)
+    Array.isArray(
+      data.features
+    )
   ) {
 
-    return data.features.map(f => {
+    return data.features.map(
+      f => {
 
-      const p =
-        f.properties || {};
+        const p =
+          f.properties || {};
 
-      const c =
-        f.geometry &&
-        f.geometry.coordinates;
 
-      return {
+        const c =
+          f.geometry &&
+          f.geometry.coordinates;
 
-        ...p,
 
-        longitude:
-          firstValue(
-            p,
-            [
-              "longitude",
-              "lon",
-              "lng"
-            ]
-          ) ??
-          (c ? c[0] : null),
+        return {
 
-        latitude:
-          firstValue(
-            p,
-            [
-              "latitude",
-              "lat"
-            ]
-          ) ??
-          (c ? c[1] : null)
-      };
+          ...p,
 
-    });
+          longitude:
+            firstValue(
+              p,
+              [
+                "longitude",
+                "lon",
+                "lng"
+              ]
+            ) ??
+            (
+              c
+                ? c[0]
+                : null
+            ),
+
+          latitude:
+            firstValue(
+              p,
+              [
+                "latitude",
+                "lat"
+              ]
+            ) ??
+            (
+              c
+                ? c[1]
+                : null
+            )
+        };
+
+      }
+    );
   }
 
 
   /*
-   * { data: [...] }
+   * {data:[...]}
    */
+
   if (
     data &&
-    Array.isArray(data.data)
+    Array.isArray(
+      data.data
+    )
   ) {
 
     return normalizeResponse(
@@ -428,11 +619,14 @@ function normalizeResponse(data) {
 
 
   /*
-   * { results: [...] }
+   * {results:[...]}
    */
+
   if (
     data &&
-    Array.isArray(data.results)
+    Array.isArray(
+      data.results
+    )
   ) {
 
     return normalizeResponse(
@@ -442,11 +636,14 @@ function normalizeResponse(data) {
 
 
   /*
-   * { accidents: [...] }
+   * {accidents:[...]}
    */
+
   if (
     data &&
-    Array.isArray(data.accidents)
+    Array.isArray(
+      data.accidents
+    )
   ) {
 
     return normalizeResponse(
@@ -460,8 +657,11 @@ function normalizeResponse(data) {
 
 
 /*
- * Koordinaten aus Datensatz lesen
+ * ============================================================
+ * Koordinaten
+ * ============================================================
  */
+
 function getCoordinates(a) {
 
   let lat =
@@ -490,15 +690,20 @@ function getCoordinates(a) {
 
 
   /*
-   * Falls geometry vorhanden ist
+   * GeoJSON-Fallback
    */
+
   if (
-    (lat === null || lon === null) &&
+    (
+      lat === null ||
+      lon === null
+    ) &&
     a.geometry
   ) {
 
     const c =
       a.geometry.coordinates;
+
 
     if (
       Array.isArray(c) &&
@@ -506,35 +711,49 @@ function getCoordinates(a) {
     ) {
 
       lon = c[0];
+
       lat = c[1];
     }
   }
 
 
-  lat = toNumber(lat);
-  lon = toNumber(lon);
+  lat =
+    toNumber(lat);
+
+  lon =
+    toNumber(lon);
 
 
   if (
     lat === null ||
     lon === null
   ) {
+
     return null;
   }
 
 
   /*
-   * Nur Deutschland
+   * Deutschland / unmittelbare Umgebung
    */
+
   if (
     lat < 47 ||
     lat > 56 ||
     lon < 5 ||
     lon > 16
   ) {
+
     return null;
   }
 
+
+  /*
+   * WICHTIG:
+   *
+   * Leaflet erwartet:
+   * [latitude, longitude]
+   */
 
   return [
     lat,
@@ -544,20 +763,23 @@ function getCoordinates(a) {
 
 
 /*
+ * ============================================================
  * Warn-Dreieck
  *
- * WICHTIG:
- * Keine CSS-Transformation auf dem
- * eigentlichen Marker.
+ * AKTUELL = ROT
+ * BEENDET  = GRAU
  *
- * Dadurch sollte sich der Marker beim
- * Zoomen nicht mehr verschieben.
+ * Deutlich größer als vorher.
+ * ============================================================
  */
-function createWarningIcon(ended) {
 
-  const background =
+function createWarningIcon(
+  ended
+) {
+
+  const color =
     ended
-      ? "#777"
+      ? "#777777"
       : "#d32f2f";
 
 
@@ -567,66 +789,95 @@ function createWarningIcon(ended) {
       "accident-warning-icon",
 
     iconSize:
-      [30, 30],
+      [46, 46],
+
+    /*
+     * Spitze des Dreiecks
+     * liegt genau auf der Koordinate.
+     */
 
     iconAnchor:
-      [15, 30],
+      [23, 44],
 
     popupAnchor:
-      [0, -28],
+      [0, -40],
 
-    html:
+    html: `
 
-      '<div style="' +
+      <div
+        style="
+          width:46px;
+          height:46px;
+          position:relative;
+          filter:
+            drop-shadow(
+              0 2px 2px
+              rgba(0,0,0,.5)
+            );
+        "
+      >
 
-        'width:0;' +
-        'height:0;' +
+        <svg
+          width="46"
+          height="46"
+          viewBox="0 0 46 46"
+          xmlns="http://www.w3.org/2000/svg"
+        >
 
-        'border-left:15px solid transparent;' +
-        'border-right:15px solid transparent;' +
+          <path
+            d="
+              M23 2
+              L44 40
+              Q46 44 41 44
+              H5
+              Q0 44 2 40
+              Z
+            "
 
-        'border-bottom:27px solid ' +
-        background +
-        ';' +
+            fill="${color}"
 
-        'position:relative;' +
+            stroke="white"
 
-        'filter:drop-shadow(' +
-          '0 1px 2px rgba(0,0,0,.55)' +
-        ');' +
+            stroke-width="3"
 
-      '">' +
+            stroke-linejoin="round"
+          />
 
-        '<span style="' +
+          <rect
+            x="20.5"
+            y="13"
+            width="5"
+            height="17"
+            rx="2.5"
+            fill="white"
+          />
 
-          'position:absolute;' +
+          <circle
+            cx="23"
+            cy="36"
+            r="2.8"
+            fill="white"
+          />
 
-          'left:-15px;' +
-          'top:5px;' +
+        </svg>
 
-          'width:30px;' +
+      </div>
 
-          'text-align:center;' +
-
-          'color:white;' +
-
-          'font:bold 17px Arial;' +
-
-        '">' +
-
-          '!' +
-
-        '</span>' +
-
-      '</div>'
+    `
   });
 }
 
 
 /*
- * Popup erzeugen
+ * ============================================================
+ * Popup
+ * ============================================================
  */
-function createPopup(a, ended) {
+
+function createPopup(
+  a,
+  ended
+) {
 
   const city =
     firstValue(
@@ -692,7 +943,9 @@ function createPopup(a, ended) {
 
         (
           ended
+
             ? "⚠ Beendete Unfallmeldung"
+
             : "⚠ Aktuelle Unfallmeldung"
         ) +
 
@@ -701,47 +954,67 @@ function createPopup(a, ended) {
       '<br><br>' +
 
       '<b>Ort:</b> ' +
+
       escapeHtml(city) +
 
       '<br>' +
 
       '<b>Straße:</b> ' +
+
       escapeHtml(street);
 
 
   /*
-   * Bei beendeten Meldungen:
+   * BEENDET
    *
-   * NUR Anfang und Ende
+   * Nur Anfang und Ende.
    */
-  if (ended) {
+
+  if (
+    ended
+  ) {
 
     html +=
 
       '<br>' +
 
       '<b>Anfang:</b> ' +
-      formatDate(created) +
+
+      formatDate(
+        created
+      ) +
 
       '<br>' +
 
       '<b>Ende:</b> ' +
-      formatDate(endedAt);
 
-  } else {
+      formatDate(
+        endedAt
+      );
 
-    /*
-     * Aktuelle Meldung
-     */
+  }
+
+
+  /*
+   * AKTUELL
+   */
+
+  else {
+
     html +=
 
       '<br>' +
 
       '<b>Meldung:</b> ' +
-      formatDate(created);
+
+      formatDate(
+        created
+      );
 
 
-    if (confirmed) {
+    if (
+      confirmed
+    ) {
 
       html +=
 
@@ -755,7 +1028,9 @@ function createPopup(a, ended) {
     }
 
 
-    if (reliability) {
+    if (
+      reliability
+    ) {
 
       html +=
 
@@ -779,8 +1054,11 @@ function createPopup(a, ended) {
 
 
 /*
+ * ============================================================
  * Marker zeichnen
+ * ============================================================
  */
+
 function renderMarkers() {
 
   markerLayer.clearLayers();
@@ -793,17 +1071,21 @@ function renderMarkers() {
   ) {
 
     const ended =
-      isEnded(accident);
+      isEnded(
+        accident
+      );
 
 
     /*
      * AKTUELL:
-     * nur aktive Meldungen
+     * beendete Meldungen ausblenden.
      */
+
     if (
       mode === "current" &&
       ended
     ) {
+
       continue;
     }
 
@@ -811,7 +1093,10 @@ function renderMarkers() {
     /*
      * LETZTE 24 STUNDEN
      */
-    if (mode === "history") {
+
+    if (
+      mode === "history"
+    ) {
 
       const reference =
         getEndedAt(accident) ||
@@ -819,10 +1104,14 @@ function renderMarkers() {
 
 
       const d =
-        parseDate(reference);
+        parseDate(
+          reference
+        );
 
 
-      if (d) {
+      if (
+        d
+      ) {
 
         const age =
           Date.now() -
@@ -831,7 +1120,9 @@ function renderMarkers() {
 
         const start =
           parseDate(
-            getCreatedAt(accident)
+            getCreatedAt(
+              accident
+            )
           );
 
 
@@ -840,7 +1131,10 @@ function renderMarkers() {
           (
             ended &&
             age <=
-              24 * 60 * 60 * 1000
+              24 *
+              60 *
+              60 *
+              1000
           )
 
           ||
@@ -852,11 +1146,17 @@ function renderMarkers() {
               Date.now() -
               start.getTime()
             ) <=
-              24 * 60 * 60 * 1000
+              24 *
+              60 *
+              60 *
+              1000
           );
 
 
-        if (!relevant) {
+        if (
+          !relevant
+        ) {
+
           continue;
         }
       }
@@ -866,28 +1166,41 @@ function renderMarkers() {
     /*
      * Koordinaten
      */
+
     const coords =
-      getCoordinates(accident);
+      getCoordinates(
+        accident
+      );
 
 
-    if (!coords) {
+    if (
+      !coords
+    ) {
+
       continue;
     }
 
 
     /*
-     * Leaflet Marker
+     * Marker erzeugen
+     *
+     * Hier wird 'ended' direkt an
+     * createWarningIcon übergeben.
      */
+
     const marker =
       L.marker(
         coords,
         {
+
           icon:
             createWarningIcon(
               ended
             ),
 
-          keyboard: false
+          keyboard:
+            false
+
         }
       );
 
@@ -895,6 +1208,7 @@ function renderMarkers() {
     /*
      * Popup
      */
+
     marker.bindPopup(
       createPopup(
         accident,
@@ -915,26 +1229,36 @@ function renderMarkers() {
   /*
    * Status
    */
+
   document.getElementById(
     "status"
   ).textContent =
 
     shown +
+
     " Meldung" +
-    (shown === 1 ? "" : "en") +
+
+    (
+      shown === 1
+        ? ""
+        : "en"
+    ) +
+
     " angezeigt";
 
 
-  /*
-   * Leaflet neu berechnen lassen
-   */
-  map.invalidateSize(false);
+  map.invalidateSize(
+    false
+  );
 }
 
 
 /*
+ * ============================================================
  * Daten laden
+ * ============================================================
  */
+
 async function loadData() {
 
   const status =
@@ -953,19 +1277,26 @@ async function loadData() {
       await fetch(
         API_URL,
         {
-          method: "GET",
 
-          cache: "no-store",
+          method:
+            "GET",
 
-          headers: {
-            "Accept":
-              "application/json"
-          }
+          cache:
+            "no-store",
+
+          headers:
+            {
+              "Accept":
+                "application/json"
+            }
+
         }
       );
 
 
-    if (!response.ok) {
+    if (
+      !response.ok
+    ) {
 
       throw new Error(
         "HTTP " +
@@ -979,7 +1310,9 @@ async function loadData() {
 
 
     allAccidents =
-      normalizeResponse(data);
+      normalizeResponse(
+        data
+      );
 
 
     console.log(
@@ -997,7 +1330,11 @@ async function loadData() {
     renderMarkers();
 
 
-  } catch (error) {
+  }
+
+  catch (
+    error
+  ) {
 
     console.error(
       "Fehler beim Laden der Unfalldaten:",
@@ -1013,15 +1350,21 @@ async function loadData() {
 
 
 /*
- * Button: AKTUELL
+ * ============================================================
+ * Button AKTUELL
+ * ============================================================
  */
+
 document
-  .getElementById("currentBtn")
+  .getElementById(
+    "currentBtn"
+  )
   .addEventListener(
     "click",
     function() {
 
-      mode = "current";
+      mode =
+        "current";
 
 
       this.classList.add(
@@ -1039,20 +1382,27 @@ document
 
 
       renderMarkers();
+
     }
   );
 
 
 /*
- * Button: LETZTE 24 STUNDEN
+ * ============================================================
+ * Button LETZTE 24 STUNDEN
+ * ============================================================
  */
+
 document
-  .getElementById("historyBtn")
+  .getElementById(
+    "historyBtn"
+  )
   .addEventListener(
     "click",
     function() {
 
-      mode = "history";
+      mode =
+        "history";
 
 
       this.classList.add(
@@ -1070,16 +1420,20 @@ document
 
 
       renderMarkers();
+
     }
   );
 
 
 /*
- * Bei Zoom:
+ * ============================================================
+ * Zoom
  *
- * KEINE Koordinaten verändern.
- * Leaflet berechnet die Position selbst.
+ * Keine Koordinaten verändern.
+ * Leaflet berechnet die Markerposition.
+ * ============================================================
  */
+
 map.on(
   "zoomend",
   function() {
@@ -1093,21 +1447,29 @@ map.on(
 
           marker.update();
         }
+
       }
     );
+
   }
 );
 
 
 /*
+ * ============================================================
  * Erste Abfrage
+ * ============================================================
  */
+
 loadData();
 
 
 /*
+ * ============================================================
  * Alle 5 Minuten aktualisieren
+ * ============================================================
  */
+
 setInterval(
   loadData,
   5 * 60 * 1000
