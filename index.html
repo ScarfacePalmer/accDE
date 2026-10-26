@@ -4,21 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Verkehrslage – Unfälle Deutschland</title>
+    <title>Unfallkarte Deutschland</title>
 
     <link
-        href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css"
+        href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css"
         rel="stylesheet"
     >
 
     <style>
-
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
             font-family: Arial, sans-serif;
         }
 
@@ -27,196 +26,194 @@
             height: 100%;
         }
 
-        /* =========================================
-           BUTTONS
-           ========================================= */
+        /* ----------------------------------------------------
+           Steuerung
+        ---------------------------------------------------- */
 
-        .controls {
+        #controls {
             position: absolute;
-            z-index: 2000;
-            top: 10px;
-            left: 10px;
-
-            background: white;
-            padding: 5px;
-
-            border-radius: 7px;
-
-            box-shadow:
-                0 2px 8px rgba(0,0,0,0.3);
+            top: 12px;
+            left: 12px;
+            z-index: 10;
 
             display: flex;
-            gap: 5px;
+            gap: 6px;
+
+            background: rgba(255,255,255,0.96);
+            padding: 6px;
+            border-radius: 8px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
         }
 
-        .controls button {
+        #controls button {
             border: none;
-
-            padding: 9px 14px;
-
-            border-radius: 5px;
+            border-radius: 6px;
+            padding: 8px 13px;
 
             background: #eeeeee;
+            color: #222;
 
+            font-size: 14px;
             cursor: pointer;
-
-            font-weight: bold;
-            font-size: 13px;
         }
 
-        .controls button:hover {
+        #controls button:hover {
             background: #dddddd;
         }
 
-        .controls button.active {
-            background: #1976d2;
+        #controls button.active {
+            background: #333;
             color: white;
         }
 
-        /* =========================================
-           TITEL
-           ========================================= */
+        /* ----------------------------------------------------
+           Status
+        ---------------------------------------------------- */
 
-        .title-box {
+        #status {
             position: absolute;
-            z-index: 2000;
+            bottom: 12px;
+            left: 12px;
+            z-index: 10;
 
-            top: 10px;
-            left: 50%;
-
-            transform: translateX(-50%);
-
-            background: white;
-
-            padding: 8px 14px;
+            background: rgba(255,255,255,0.94);
+            padding: 7px 10px;
 
             border-radius: 6px;
 
-            box-shadow:
-                0 2px 7px rgba(0,0,0,0.3);
+            font-size: 13px;
 
-            font-weight: bold;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.2);
         }
 
-        /* =========================================
-           STATUS
-           ========================================= */
+        /* ----------------------------------------------------
+           Popup
+        ---------------------------------------------------- */
 
-        .status-box {
-            position: absolute;
-            z-index: 2000;
-
-            bottom: 10px;
-            left: 10px;
-
-            background: white;
-
-            padding: 7px 10px;
-
-            border-radius: 5px;
-
-            box-shadow:
-                0 2px 6px rgba(0,0,0,0.25);
-
-            font-size: 12px;
-        }
-
-        /* =========================================
-           POPUP
-           ========================================= */
-
-        .maplibregl-popup-content {
+        .popup {
+            min-width: 230px;
             font-size: 13px;
             line-height: 1.45;
-
-            padding: 10px 12px;
         }
 
-        .tooltip-title {
-            font-size: 15px;
+        .popup-title {
+            font-size: 16px;
             font-weight: bold;
-
-            margin-bottom: 4px;
+            margin-bottom: 7px;
         }
 
+        .popup-row {
+            margin: 3px 0;
+        }
+
+        .popup-label {
+            font-weight: bold;
+        }
+
+        .current-title {
+            color: #168a35;
+        }
+
+        .ended-title {
+            color: #d43b32;
+        }
+
+        /* ----------------------------------------------------
+           Legende
+        ---------------------------------------------------- */
+
+        #legend {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+
+            background: rgba(255,255,255,0.95);
+            padding: 8px 11px;
+
+            border-radius: 7px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+
+            font-size: 13px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 3px 0;
+        }
+
+        .legend-symbol {
+            width: 24px;
+            text-align: center;
+            font-size: 19px;
+            margin-right: 5px;
+        }
+
+        .legend-current {
+            color: #168a35;
+        }
+
+        .legend-ended {
+            color: #d43b32;
+        }
     </style>
 </head>
 
 <body>
 
-<div class="controls">
-
-    <button
-        id="currentButton"
-        class="active"
-    >
-        AKTUELL
-    </button>
-
-    <button
-        id="dayButton"
-    >
-        LETZTE 24 H
-    </button>
-
-</div>
-
-
-<div class="title-box">
-    🚨 Unfallmeldungen Deutschland
-</div>
-
-
 <div id="map"></div>
 
+<div id="controls">
+    <button id="btnCurrent" class="active">
+        Aktuell
+    </button>
 
-<div
-    class="status-box"
-    id="status"
->
-    Lade Unfallmeldungen …
+    <button id="btn24h">
+        Letzte 24 Stunden
+    </button>
+</div>
+
+<div id="legend">
+    <div class="legend-item">
+        <span class="legend-symbol legend-current">⚠</span>
+        Aktuelle Meldung
+    </div>
+
+    <div class="legend-item">
+        <span class="legend-symbol legend-ended">⚠</span>
+        Beendete Meldung
+    </div>
+</div>
+
+<div id="status">
+    Lade Unfalldaten …
 </div>
 
 
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script>
-
+<script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
 
 <script>
-
-// ==========================================================
-// KONFIGURATION
-// ==========================================================
 
 const API_URL =
     "https://accde-api.r73d.workers.dev/api/accidents";
 
-const GERMANY_GEOJSON =
-    "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/1_deutschland/1_deutschland_low.geo.json";
 
-let currentMode = "current";
-
-
-// ==========================================================
-// KARTE
-// ==========================================================
+/* ============================================================
+   Karte
+============================================================ */
 
 const map = new maplibregl.Map({
-
     container: "map",
 
     style:
         "https://tiles.openfreemap.org/styles/liberty",
 
-    center: [
-        10.4515,
-        51.1657
-    ],
+    center: [10.45, 51.2],
 
     zoom: 5.5,
-
-    minZoom: 4,
-
-    maxZoom: 18,
 
     attributionControl: true
 });
@@ -228,9 +225,47 @@ map.addControl(
 );
 
 
-// ==========================================================
-// DATUM
-// ==========================================================
+/* ============================================================
+   Globale Daten
+============================================================ */
+
+let accidents = [];
+
+let currentMode = "current";
+
+
+/* ============================================================
+   Hilfsfunktionen
+============================================================ */
+
+function getValue(obj, names, fallback = null) {
+
+    for (const name of names) {
+
+        if (
+            obj[name] !== undefined &&
+            obj[name] !== null &&
+            obj[name] !== ""
+        ) {
+            return obj[name];
+        }
+    }
+
+    return fallback;
+}
+
+
+function toNumber(value) {
+
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    const n = Number(value);
+
+    return Number.isFinite(n) ? n : null;
+}
+
 
 function formatDate(value) {
 
@@ -238,13 +273,13 @@ function formatDate(value) {
         return "unbekannt";
     }
 
-    const date = new Date(value);
+    const d = new Date(value);
 
-    if (isNaN(date.getTime())) {
-        return value;
+    if (isNaN(d.getTime())) {
+        return String(value);
     }
 
-    return date.toLocaleString(
+    return d.toLocaleString(
         "de-DE",
         {
             dateStyle: "short",
@@ -254,341 +289,189 @@ function formatDate(value) {
 }
 
 
-// ==========================================================
-// HTML ESCAPEN
-// ==========================================================
-
 function escapeHtml(value) {
 
-    if (
-        value === null ||
-        value === undefined
-    ) {
+    if (value === null || value === undefined) {
         return "";
     }
 
     return String(value)
-
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
-// ==========================================================
-// DEUTSCHLAND-MASKE
-// ==========================================================
-
-async function createGermanyMask() {
-
-    try {
-
-        const response =
-            await fetch(
-                GERMANY_GEOJSON
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Deutschland-GeoJSON konnte nicht geladen werden."
-            );
-        }
-
-        const germany =
-            await response.json();
-
-
-        let features = [];
-
-
-        if (
-            germany.type ===
-            "FeatureCollection"
-        ) {
-
-            features =
-                germany.features;
-
-        } else if (
-            germany.type ===
-            "Feature"
-        ) {
-
-            features = [
-                germany
-            ];
-
-        } else {
-
-            features = [
-                {
-                    type: "Feature",
-                    properties: {},
-                    geometry: germany
-                }
-            ];
-        }
-
-
-        // ==================================================
-        // WELTFLÄCHE + DEUTSCHLAND ALS LOCH
-        // ==================================================
-
-        const worldRing = [
-
-            [-180, -85],
-            [180, -85],
-            [180, 85],
-            [-180, 85],
-            [-180, -85]
-
-        ];
-
-
-        const holes = [];
-
-
-        for (
-            const feature
-            of features
-        ) {
-
-            if (!feature.geometry) {
-                continue;
-            }
-
-
-            if (
-                feature.geometry.type ===
-                "Polygon"
-            ) {
-
-                if (
-                    feature.geometry.coordinates.length
-                ) {
-
-                    holes.push(
-                        feature.geometry.coordinates[0]
-                    );
-                }
-
-            } else if (
-                feature.geometry.type ===
-                "MultiPolygon"
-            ) {
-
-                for (
-                    const polygon
-                    of feature.geometry.coordinates
-                ) {
-
-                    if (polygon.length) {
-
-                        holes.push(
-                            polygon[0]
-                        );
-                    }
-                }
-            }
-        }
-
-
-        if (holes.length) {
-
-            map.addSource(
-                "germany-mask",
-                {
-                    type: "geojson",
-
-                    data: {
-                        type: "Feature",
-
-                        properties: {},
-
-                        geometry: {
-                            type: "Polygon",
-
-                            coordinates: [
-                                worldRing,
-                                ...holes
-                            ]
-                        }
-                    }
-                }
-            );
-
-
-            map.addLayer({
-
-                id: "germany-mask",
-
-                type: "fill",
-
-                source: "germany-mask",
-
-                paint: {
-
-                    "fill-color":
-                        "#555555",
-
-                    "fill-opacity":
-                        0.58
-                }
-            });
-        }
-
-
-        // ==================================================
-        // DEUTSCHLAND-GRENZE
-        // ==================================================
-
-        map.addSource(
-            "germany-border",
-            {
-                type: "geojson",
-                data: germany
-            }
-        );
-
-
-        map.addLayer({
-
-            id: "germany-border",
-
-            type: "line",
-
-            source: "germany-border",
-
-            paint: {
-
-                "line-color":
-                    "#222222",
-
-                "line-width":
-                    2.5
-            }
-        });
-
-
-        // ==================================================
-        // DEUTSCHLAND EINPASSEN
-        // ==================================================
-
-        const bounds =
-            new maplibregl.LngLatBounds();
-
-
-        function addCoordinates(
-            coordinates
-        ) {
-
-            if (
-                typeof coordinates[0] ===
-                "number"
-            ) {
-
-                bounds.extend(
-                    coordinates
-                );
-
-                return;
-            }
-
-
-            for (
-                const coordinate
-                of coordinates
-            ) {
-
-                addCoordinates(
-                    coordinate
-                );
-            }
-        }
-
-
-        for (
-            const feature
-            of features
-        ) {
-
-            if (
-                feature.geometry
-            ) {
-
-                addCoordinates(
-                    feature.geometry.coordinates
-                );
-            }
-        }
-
-
-        if (!bounds.isEmpty()) {
-
-            map.fitBounds(
-                bounds,
-                {
-                    padding: 30
-                }
-            );
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Deutschlandmaske:",
-            error
-        );
-    }
-}
-
-
-// ==========================================================
-// UNFALL-DATEN ALS GEOJSON
-// ==========================================================
-
-function accidentsToGeoJSON(
-    accidents
-) {
+/* ============================================================
+   Daten in GeoJSON umwandeln
+============================================================ */
+
+function accidentsToGeoJSON(data) {
 
     const features = [];
 
+    for (const accident of data) {
 
-    for (
-        const accident
-        of accidents
-    ) {
+        const latitude = toNumber(
+            getValue(accident, [
+                "latitude",
+                "lat",
+                "Latitude",
+                "LAT"
+            ])
+        );
 
-        const latitude =
-            Number(
-                accident.latitude
-            );
+        const longitude = toNumber(
+            getValue(accident, [
+                "longitude",
+                "lon",
+                "lng",
+                "Longitude",
+                "LON"
+            ])
+        );
 
-        const longitude =
-            Number(
-                accident.longitude
-            );
-
+        /*
+         * Datensätze ohne gültige Koordinaten ignorieren.
+         * Dadurch entsteht kein "Expected value ... null"-Fehler.
+         */
 
         if (
-            !Number.isFinite(latitude) ||
-            !Number.isFinite(longitude)
+            latitude === null ||
+            longitude === null
         ) {
-
             continue;
         }
+
+        if (
+            latitude < 45 ||
+            latitude > 56 ||
+            longitude < 5 ||
+            longitude > 16
+        ) {
+            continue;
+        }
+
+
+        const city = getValue(
+            accident,
+            ["city", "ort", "location", "place"],
+            "Unbekannter Ort"
+        );
+
+        const street = getValue(
+            accident,
+            ["street", "strasse", "road"],
+            "Unbekannte Straße"
+        );
+
+
+        const reliability = getValue(
+            accident,
+            [
+                "reliability",
+                "zuverlaessigkeit",
+                "zuverlässigkeit"
+            ],
+            null
+        );
+
+
+        const reported = getValue(
+            accident,
+            [
+                "reported_at",
+                "report_time",
+                "reported",
+                "meldung",
+                "timestamp",
+                "created_at",
+                "createdAt"
+            ],
+            null
+        );
+
+
+        const confirmed = getValue(
+            accident,
+            [
+                "confirmed_at",
+                "confirmation_time",
+                "confirmed",
+                "bestaetigt",
+                "bestätigt"
+            ],
+            null
+        );
+
+
+        const start = getValue(
+            accident,
+            [
+                "start_time",
+                "started_at",
+                "begin",
+                "begonnen",
+                "first_seen"
+            ],
+            reported
+        );
+
+
+        const end = getValue(
+            accident,
+            [
+                "end_time",
+                "ended_at",
+                "end",
+                "beendet",
+                "last_seen"
+            ],
+            null
+        );
+
+
+        const id = getValue(
+            accident,
+            [
+                "id",
+                "uuid",
+                "accident_id"
+            ],
+            `${latitude}_${longitude}_${reported}`
+        );
+
+
+        /*
+         * Für die 24h-Ansicht bestimmen wir, ob die Meldung
+         * beendet wurde.
+         */
+
+        const ended =
+            end !== null &&
+            end !== "";
 
 
         features.push({
 
             type: "Feature",
 
+            id: String(id),
+
             geometry: {
 
                 type: "Point",
+
+                /*
+                 * WICHTIG:
+                 *
+                 * GeoJSON = [longitude, latitude]
+                 *
+                 * Keine Pixelpositionierung.
+                 * Keine translate()-Berechnung.
+                 */
 
                 coordinates: [
                     longitude,
@@ -598,35 +481,27 @@ function accidentsToGeoJSON(
 
             properties: {
 
-                id:
-                    accident.id,
+                id: String(id),
 
-                city:
-                    accident.city || "",
+                ort: city,
 
-                street:
-                    accident.street || "",
+                strasse: street,
 
-                state:
-                    accident.state || "",
+                latitude: latitude,
 
-                reliability:
-                    accident.reliability || "",
+                longitude: longitude,
 
-                created_at:
-                    accident.created_at || "",
+                reliability: reliability,
 
-                confirmed_at:
-                    accident.confirmed_at || "",
+                reported: reported,
 
-                first_seen_at:
-                    accident.first_seen_at || "",
+                confirmed: confirmed,
 
-                last_seen_at:
-                    accident.last_seen_at || "",
+                start: start,
 
-                removed_at:
-                    accident.removed_at || ""
+                end: end,
+
+                ended: ended
             }
         });
     }
@@ -641,473 +516,407 @@ function accidentsToGeoJSON(
 }
 
 
-// ==========================================================
-// UNFALL-LAYER ERSTELLEN
-// ==========================================================
+/* ============================================================
+   Popup erzeugen
+============================================================ */
 
-function createAccidentLayers() {
+function createPopup(properties) {
 
-    // Falls bereits vorhanden löschen
+    const ended =
+        properties.ended === true ||
+        properties.ended === "true";
 
-    if (
-        map.getLayer(
-            "accidents-current"
-        )
-    ) {
 
-        map.removeLayer(
-            "accidents-current"
-        );
+    let html = '<div class="popup">';
+
+
+    if (!ended) {
+
+        html += `
+            <div class="popup-title current-title">
+                ⚠ Aktuelle Meldung
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">Ort:</span>
+                ${escapeHtml(properties.ort)}
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">Straße:</span>
+                ${escapeHtml(properties.strasse)}
+            </div>
+        `;
+
+
+        if (properties.reliability !== null) {
+
+            html += `
+                <div class="popup-row">
+                    <span class="popup-label">
+                        Zuverlässigkeit:
+                    </span>
+                    ${escapeHtml(properties.reliability)}
+                </div>
+            `;
+        }
+
+
+        html += `
+            <div class="popup-row">
+                <span class="popup-label">
+                    Meldung:
+                </span>
+                ${escapeHtml(
+                    formatDate(properties.reported)
+                )}
+            </div>
+        `;
+
+
+        if (properties.confirmed) {
+
+            html += `
+                <div class="popup-row">
+                    <span class="popup-label">
+                        Bestätigt:
+                    </span>
+                    ${escapeHtml(
+                        formatDate(properties.confirmed)
+                    )}
+                </div>
+            `;
+        }
+
+    } else {
+
+        /*
+         * Bei beendeten Meldungen:
+         * Anfang / Ende statt Zuverlässigkeit / Bestätigung
+         */
+
+        html += `
+            <div class="popup-title ended-title">
+                ⚠ Beendete Meldung
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">Ort:</span>
+                ${escapeHtml(properties.ort)}
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">Straße:</span>
+                ${escapeHtml(properties.strasse)}
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">
+                    Anfang:
+                </span>
+                ${escapeHtml(
+                    formatDate(properties.start)
+                )}
+            </div>
+
+            <div class="popup-row">
+                <span class="popup-label">
+                    Ende:
+                </span>
+                ${escapeHtml(
+                    formatDate(properties.end)
+                )}
+            </div>
+        `;
     }
 
 
-    if (
-        map.getLayer(
-            "accidents-ended"
-        )
-    ) {
+    html += "</div>";
 
-        map.removeLayer(
-            "accidents-ended"
-        );
-    }
-
-
-    if (
-        map.getSource(
-            "accidents"
-        )
-    ) {
-
-        map.removeSource(
-            "accidents"
-        );
-    }
-
-
-    // ======================================================
-    // SOURCE
-    // ======================================================
-
-    map.addSource(
-
-        "accidents",
-
-        {
-
-            type: "geojson",
-
-            data: {
-                type: "FeatureCollection",
-
-                features: []
-            }
-        }
-    );
-
-
-    // ======================================================
-    // AKTUELLE UNFÄLLE
-    // ======================================================
-
-    map.addLayer({
-
-        id:
-            "accidents-current",
-
-        type:
-            "symbol",
-
-        source:
-            "accidents",
-
-        filter: [
-
-            "==",
-
-            [
-                "get",
-                "removed_at"
-            ],
-
-            ""
-        ],
-
-        layout: {
-
-            "icon-image":
-                "triangle-15",
-
-            "icon-size":
-                1.3,
-
-            "icon-allow-overlap":
-                true,
-
-            "icon-ignore-placement":
-                true
-        },
-
-        paint: {
-
-            "icon-color":
-                "#d71920",
-
-            "icon-halo-color":
-                "#ffffff",
-
-            "icon-halo-width":
-                1.5
-        }
-    });
-
-
-    // ======================================================
-    // BEENDETE UNFÄLLE
-    // ======================================================
-
-    map.addLayer({
-
-        id:
-            "accidents-ended",
-
-        type:
-            "symbol",
-
-        source:
-            "accidents",
-
-        filter: [
-
-            "!=",
-
-            [
-                "get",
-                "removed_at"
-            ],
-
-            ""
-        ],
-
-        layout: {
-
-            "icon-image":
-                "triangle-15",
-
-            "icon-size":
-                1.3,
-
-            "icon-allow-overlap":
-                true,
-
-            "icon-ignore-placement":
-                true
-        },
-
-        paint: {
-
-            "icon-color":
-                "#777777",
-
-            "icon-halo-color":
-                "#ffffff",
-
-            "icon-halo-width":
-                1.5
-        }
-    });
+    return html;
 }
 
 
-// ==========================================================
-// UNFALL-SYMBOL
-// ==========================================================
+/* ============================================================
+   Map-Layer
+============================================================ */
 
-function createTriangleImage() {
+function updateMap() {
+
+    const geojson =
+        accidentsToGeoJSON(accidents);
+
 
     /*
-     * MapLibre bekommt ein echtes Bild.
+     * Falls die Quelle schon existiert:
+     * nur die Daten austauschen.
      *
-     * Wichtig:
-     * Der Mittelpunkt des Bildes entspricht
-     * exakt der GeoJSON-Koordinate.
+     * Dadurch bleibt der MapLibre-Layer erhalten.
      */
 
-    const size = 32;
+    if (map.getSource("accidents")) {
 
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
+        map
+            .getSource("accidents")
+            .setData(geojson);
 
-    canvas.width = size;
-    canvas.height = size;
-
-
-    const ctx =
-        canvas.getContext(
-            "2d"
-        );
-
-
-    // Schatten
-
-    ctx.shadowColor =
-        "rgba(0,0,0,0.5)";
-
-    ctx.shadowBlur = 3;
-
-    ctx.shadowOffsetY = 2;
-
-
-    // Dreieck
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        size / 2,
-        3
-    );
-
-    ctx.lineTo(
-        4,
-        size - 4
-    );
-
-    ctx.lineTo(
-        size - 4,
-        size - 4
-    );
-
-    ctx.closePath();
-
-
-    ctx.fillStyle =
-        "#d71920";
-
-    ctx.fill();
-
-
-    // Weißes Ausrufezeichen
-
-    ctx.shadowColor =
-        "transparent";
-
-    ctx.fillStyle =
-        "#ffffff";
-
-    ctx.font =
-        "bold 17px Arial";
-
-    ctx.textAlign =
-        "center";
-
-    ctx.textBaseline =
-        "middle";
-
-
-    ctx.fillText(
-        "!",
-        size / 2,
-        19
-    );
-
-
-    const image =
-        ctx.getImageData(
-            0,
-            0,
-            size,
-            size
-        );
-
-
-    if (
-        !map.hasImage(
-            "triangle-15"
-        )
-    ) {
-
-        map.addImage(
-            "triangle-15",
-            image,
-            {
-                pixelRatio: 2
-            }
-        );
-    }
-}
-
-
-// ==========================================================
-// POPUP
-// ==========================================================
-
-function showAccidentPopup(
-    feature
-) {
-
-    const p =
-        feature.properties;
-
-
-    const city =
-        escapeHtml(
-            p.city
-        ) ||
-        "unbekannt";
-
-
-    const street =
-        escapeHtml(
-            p.street
-        ) ||
-        "unbekannt";
-
-
-    let html;
-
-
-    // ======================================================
-    // AKTUELL
-    // ======================================================
-
-    if (
-        currentMode ===
-        "current" ||
-        !p.removed_at
-    ) {
-
-        const reliability =
-            escapeHtml(
-                p.reliability
-            ) ||
-            "unbekannt";
-
-
-        html = `
-
-            <div class="tooltip-title">
-                ${city}
-            </div>
-
-            Straße:
-            ${street}
-
-            <br>
-
-            Zuverlässigkeit:
-            ${reliability}
-
-            <br>
-
-            Meldung:
-            ${formatDate(
-                p.created_at
-            )}
-
-            <br>
-
-            Bestätigt:
-            ${formatDate(
-                p.confirmed_at
-            )}
-
-        `;
-
+        return;
     }
 
 
-    // ======================================================
-    // BEENDET
-    // ======================================================
+    /* --------------------------------------------------------
+       GeoJSON Source
+    -------------------------------------------------------- */
 
-    else {
+    map.addSource(
+        "accidents",
+        {
+            type: "geojson",
 
-        html = `
-
-            <div class="tooltip-title">
-                ${city}
-            </div>
-
-            Straße:
-            ${street}
-
-            <br>
-
-            Anfang:
-            ${formatDate(
-                p.created_at
-            )}
-
-            <br>
-
-            Ende:
-            ${formatDate(
-                p.removed_at
-            )}
-
-        `;
-    }
+            data: geojson
+        }
+    );
 
 
-    const popup =
+    /* --------------------------------------------------------
+       Aktuelle Meldungen
+    -------------------------------------------------------- */
+
+    map.addLayer({
+
+        id: "accidents-current",
+
+        type: "symbol",
+
+        source: "accidents",
+
+        filter: [
+            "==",
+            ["get", "ended"],
+            false
+        ],
+
+        layout: {
+
+            /*
+             * ⚠ wird direkt vom Kartenrenderer
+             * geographisch positioniert.
+             */
+
+            "text-field": "⚠",
+
+            "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+
+                4, 22,
+
+                7, 27,
+
+                10, 32,
+
+                14, 38
+            ],
+
+            "text-anchor": "center",
+
+            "text-allow-overlap": true,
+
+            "text-ignore-placement": true
+        },
+
+        paint: {
+
+            "text-color": "#168a35",
+
+            "text-halo-color": "#ffffff",
+
+            "text-halo-width": 2,
+
+            "text-halo-blur": 0.3
+        }
+    });
+
+
+    /* --------------------------------------------------------
+       Beendete Meldungen
+    -------------------------------------------------------- */
+
+    map.addLayer({
+
+        id: "accidents-ended",
+
+        type: "symbol",
+
+        source: "accidents",
+
+        filter: [
+            "==",
+            ["get", "ended"],
+            true
+        ],
+
+        layout: {
+
+            "text-field": "⚠",
+
+            "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+
+                4, 22,
+
+                7, 27,
+
+                10, 32,
+
+                14, 38
+            ],
+
+            "text-anchor": "center",
+
+            "text-allow-overlap": true,
+
+            "text-ignore-placement": true
+        },
+
+        paint: {
+
+            "text-color": "#d43b32",
+
+            "text-halo-color": "#ffffff",
+
+            "text-halo-width": 2,
+
+            "text-halo-blur": 0.3
+        }
+    });
+
+
+    /* --------------------------------------------------------
+       Klick / Popup
+    -------------------------------------------------------- */
+
+    function showPopup(event) {
+
+        const feature =
+            event.features &&
+            event.features[0];
+
+        if (!feature) {
+            return;
+        }
+
+
+        const coordinates =
+            feature.geometry.coordinates.slice();
+
+
+        /*
+         * Popup bekommt die geografischen Koordinaten
+         * direkt aus dem GeoJSON-Feature.
+         */
+
         new maplibregl.Popup({
 
-            closeButton:
-                false,
+            closeButton: true,
 
-            closeOnClick:
-                false,
+            closeOnClick: true,
 
-            offset:
-                12
-        });
+            maxWidth: "320px"
+        })
 
+        .setLngLat(coordinates)
 
-    popup
-        .setLngLat(
-            feature.geometry.coordinates
-        )
         .setHTML(
-            html
+            createPopup(feature.properties)
         )
-        .addTo(
-            map
-        );
+
+        .addTo(map);
+    }
+
+
+    map.on(
+        "click",
+        "accidents-current",
+        showPopup
+    );
+
+
+    map.on(
+        "click",
+        "accidents-ended",
+        showPopup
+    );
+
+
+    /* --------------------------------------------------------
+       Cursor
+    -------------------------------------------------------- */
+
+    map.on(
+        "mouseenter",
+        "accidents-current",
+        () => {
+            map.getCanvas().style.cursor = "pointer";
+        }
+    );
+
+
+    map.on(
+        "mouseenter",
+        "accidents-ended",
+        () => {
+            map.getCanvas().style.cursor = "pointer";
+        }
+    );
+
+
+    map.on(
+        "mouseleave",
+        "accidents-current",
+        () => {
+            map.getCanvas().style.cursor = "";
+        }
+    );
+
+
+    map.on(
+        "mouseleave",
+        "accidents-ended",
+        () => {
+            map.getCanvas().style.cursor = "";
+        }
+    );
 }
 
 
-// ==========================================================
-// UNFÄLLE LADEN
-// ==========================================================
+/* ============================================================
+   Daten laden
+============================================================ */
 
-async function loadAccidents() {
+async function loadAccidents(mode) {
+
+    currentMode = mode;
+
 
     const status =
-        document.getElementById(
-            "status"
-        );
+        document.getElementById("status");
+
+
+    status.textContent =
+        "Lade Unfalldaten …";
 
 
     try {
 
-        status.textContent =
-            "Lade Unfallmeldungen …";
-
-
         const response =
             await fetch(
-
-                API_URL +
-                "?mode=" +
-                encodeURIComponent(
-                    currentMode
-                ),
-
+                `${API_URL}?mode=${encodeURIComponent(mode)}`,
                 {
-                    cache:
-                        "no-store"
+                    cache: "no-store"
                 }
             );
 
@@ -1115,8 +924,7 @@ async function loadAccidents() {
         if (!response.ok) {
 
             throw new Error(
-                "HTTP " +
-                response.status
+                `HTTP ${response.status}`
             );
         }
 
@@ -1125,290 +933,130 @@ async function loadAccidents() {
             await response.json();
 
 
-        if (!data.success) {
+        /*
+         * API kann entweder direkt ein Array liefern
+         * oder { accidents: [...] }
+         */
 
-            throw new Error(
-                data.error ||
-                "API-Fehler"
-            );
-        }
+        if (Array.isArray(data)) {
 
+            accidents = data;
 
-        const geojson =
-            accidentsToGeoJSON(
-                data.accidents
-            );
-
-
-        // ==================================================
-        // SOURCE AKTUALISIEREN
-        // ==================================================
-
-        const source =
-            map.getSource(
-                "accidents"
-            );
-
-
-        if (source) {
-
-            source.setData(
-                geojson
-            );
-
-        } else {
-
-            createAccidentLayers();
-
-            map.getSource(
-                "accidents"
-            ).setData(
-                geojson
-            );
-        }
-
-
-        // ==================================================
-        // STATUS
-        // ==================================================
-
-        const count =
-            geojson.features.length;
-
-
-        if (
-            currentMode ===
-            "current"
+        } else if (
+            data &&
+            Array.isArray(data.accidents)
         ) {
 
+            accidents = data.accidents;
+
+        } else if (
+            data &&
+            Array.isArray(data.data)
+        ) {
+
+            accidents = data.data;
+
+        } else {
+
+            console.error(
+                "Unbekanntes API-Format:",
+                data
+            );
+
+            accidents = [];
+        }
+
+
+        updateMap();
+
+
+        const validCount =
+            accidentsToGeoJSON(accidents)
+                .features.length;
+
+
+        if (mode === "current") {
+
             status.textContent =
-                count +
-                " aktuelle Unfallmeldungen";
+                `${validCount} aktuelle Meldungen`;
 
         } else {
 
             status.textContent =
-                count +
-                " Unfallmeldungen der letzten 24 Stunden";
+                `${validCount} Meldungen der letzten 24 Stunden`;
         }
 
 
     } catch (error) {
 
         console.error(
+            "Fehler beim Laden der Unfalldaten:",
             error
         );
 
 
         status.textContent =
-            "Fehler beim Laden der Unfallmeldungen";
+            "Fehler beim Laden der Unfalldaten";
     }
 }
 
 
-// ==========================================================
-// MOUSEOVER
-// ==========================================================
-
-function setupMouseEvents() {
-
-    map.on(
-
-        "mouseenter",
-
-        "accidents-current",
-
-        (event) => {
-
-            map.getCanvas().style.cursor =
-                "pointer";
-
-
-            if (
-                event.features &&
-                event.features.length
-            ) {
-
-                showAccidentPopup(
-                    event.features[0]
-                );
-            }
-        }
-    );
-
-
-    map.on(
-
-        "mouseleave",
-
-        "accidents-current",
-
-        () => {
-
-            map.getCanvas().style.cursor =
-                "";
-
-            closePopups();
-        }
-    );
-
-
-    map.on(
-
-        "mouseenter",
-
-        "accidents-ended",
-
-        (event) => {
-
-            map.getCanvas().style.cursor =
-                "pointer";
-
-
-            if (
-                event.features &&
-                event.features.length
-            ) {
-
-                showAccidentPopup(
-                    event.features[0]
-                );
-            }
-        }
-    );
-
-
-    map.on(
-
-        "mouseleave",
-
-        "accidents-ended",
-
-        () => {
-
-            map.getCanvas().style.cursor =
-                "";
-
-            closePopups();
-        }
-    );
-}
-
-
-// ==========================================================
-// POPUPS SCHLIESSEN
-// ==========================================================
-
-function closePopups() {
-
-    const popups =
-        document.querySelectorAll(
-            ".maplibregl-popup"
-        );
-
-
-    popups.forEach(
-        popup => popup.remove()
-    );
-}
-
-
-// ==========================================================
-// MODUS WECHSELN
-// ==========================================================
-
-function setMode(
-    mode
-) {
-
-    currentMode =
-        mode;
-
-
-    document
-        .getElementById(
-            "currentButton"
-        )
-        .classList.toggle(
-            "active",
-            mode === "current"
-        );
-
-
-    document
-        .getElementById(
-            "dayButton"
-        )
-        .classList.toggle(
-            "active",
-            mode === "24h"
-        );
-
-
-    closePopups();
-
-    loadAccidents();
-}
-
-
-// ==========================================================
-// BUTTONS
-// ==========================================================
+/* ============================================================
+   Buttons
+============================================================ */
 
 document
-    .getElementById(
-        "currentButton"
-    )
-    .addEventListener(
-        "click",
-        () => setMode("current")
-    );
+    .getElementById("btnCurrent")
+    .addEventListener("click", () => {
+
+        document
+            .getElementById("btnCurrent")
+            .classList.add("active");
+
+        document
+            .getElementById("btn24h")
+            .classList.remove("active");
+
+        loadAccidents("current");
+    });
 
 
 document
-    .getElementById(
-        "dayButton"
-    )
-    .addEventListener(
-        "click",
-        () => setMode("24h")
-    );
+    .getElementById("btn24h")
+    .addEventListener("click", () => {
+
+        document
+            .getElementById("btn24h")
+            .classList.add("active");
+
+        document
+            .getElementById("btnCurrent")
+            .classList.remove("active");
+
+        loadAccidents("24h");
+    });
 
 
-// ==========================================================
-// START
-// ==========================================================
+/* ============================================================
+   Initialisierung
+============================================================ */
 
-map.on(
-    "load",
-    async () => {
+map.on("load", () => {
 
-        // Symbol registrieren
-        createTriangleImage();
+    loadAccidents("current");
 
-        // Unfall-Layer
-        createAccidentLayers();
-
-        // Mouseover
-        setupMouseEvents();
-
-        // Deutschlandmaske
-        await createGermanyMask();
-
-        // Unfälle
-        await loadAccidents();
-    }
-);
+});
 
 
-// ==========================================================
-// ALLE 5 MINUTEN AKTUALISIEREN
-// ==========================================================
+/* ============================================================
+   Automatische Aktualisierung
+============================================================ */
 
-setInterval(
-    loadAccidents,
-    5 * 60 * 1000
-);
+setInterval(() => {
+
+    loadAccidents(currentMode);
+
+}, 5 * 60 * 1000);
 
 </script>
 
