@@ -29,12 +29,12 @@
 
 
         /* =========================================
-           BEDIENUNG
+           BUTTONS
            ========================================= */
 
         .controls {
             position: absolute;
-            z-index: 1000;
+            z-index: 2000;
 
             top: 10px;
             left: 10px;
@@ -52,6 +52,7 @@
             gap: 5px;
         }
 
+
         .controls button {
             border: none;
 
@@ -68,9 +69,11 @@
             font-size: 13px;
         }
 
+
         .controls button:hover {
             background: #dddddd;
         }
+
 
         .controls button.active {
             background: #1976d2;
@@ -84,7 +87,7 @@
 
         .title-box {
             position: absolute;
-            z-index: 1000;
+            z-index: 2000;
 
             top: 10px;
             left: 50%;
@@ -110,7 +113,7 @@
 
         .status-box {
             position: absolute;
-            z-index: 1000;
+            z-index: 2000;
 
             bottom: 10px;
             left: 10px;
@@ -130,21 +133,27 @@
 
         /* =========================================
            WARNDREIECK
+           
+           Die UNTERE MITTE des Elements ist die
+           eigentliche Kartenposition.
            ========================================= */
 
         .accident-marker {
             position: relative;
 
             width: 32px;
-            height: 29px;
+            height: 30px;
 
             cursor: pointer;
+
+            transform: translateY(0);
 
             filter:
                 drop-shadow(
                     0 2px 3px rgba(0,0,0,0.6)
                 );
         }
+
 
         .accident-marker::before {
             content: "";
@@ -167,6 +176,7 @@
                 28px solid var(--marker-color);
         }
 
+
         .accident-marker::after {
             content: "!";
 
@@ -185,15 +195,21 @@
 
             font-size: 18px;
 
-            line-height: 23px;
+            line-height: 22px;
 
             text-shadow:
                 0 1px 1px rgba(0,0,0,0.5);
         }
 
+
+        /* Aktueller Unfall */
+
         .accident-current {
             --marker-color: #d71920;
         }
+
+
+        /* Beendeter Unfall */
 
         .accident-ended {
             --marker-color: #777777;
@@ -212,6 +228,7 @@
             padding: 10px 12px;
         }
 
+
         .tooltip-title {
             font-size: 15px;
 
@@ -220,10 +237,21 @@
             margin-bottom: 4px;
         }
 
+
+        .maplibregl-popup {
+            z-index: 3000;
+        }
+
     </style>
 </head>
 
+
 <body>
+
+
+<!-- =========================================
+     BUTTONS
+     ========================================= -->
 
 <div class="controls">
 
@@ -234,6 +262,7 @@
         AKTUELL
     </button>
 
+
     <button
         id="dayButton"
     >
@@ -243,13 +272,25 @@
 </div>
 
 
+<!-- =========================================
+     TITEL
+     ========================================= -->
+
 <div class="title-box">
     🚨 Unfallmeldungen Deutschland
 </div>
 
 
+<!-- =========================================
+     KARTE
+     ========================================= -->
+
 <div id="map"></div>
 
+
+<!-- =========================================
+     STATUS
+     ========================================= -->
 
 <div
     class="status-box"
@@ -259,10 +300,13 @@
 </div>
 
 
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script>
+<script
+    src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js">
+</script>
 
 
 <script>
+
 
 // ==========================================================
 // KONFIGURATION
@@ -272,7 +316,6 @@ const API_URL =
     "https://accde-api.r73d.workers.dev/api/accidents";
 
 
-// Deutschland GeoJSON
 const GERMANY_GEOJSON =
     "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/1_deutschland/1_deutschland_low.geo.json";
 
@@ -280,7 +323,6 @@ const GERMANY_GEOJSON =
 let currentMode = "current";
 
 
-// Marker
 let accidentMarkers = [];
 
 
@@ -310,10 +352,14 @@ const map = new maplibregl.Map({
 });
 
 
-// Navigation
+// Navigation oben rechts
+
 map.addControl(
+
     new maplibregl.NavigationControl(),
+
     "top-right"
+
 );
 
 
@@ -347,7 +393,8 @@ async function createGermanyMask() {
 
 
         if (
-            germany.type === "FeatureCollection"
+            germany.type ===
+            "FeatureCollection"
         ) {
 
             germanyFeatures =
@@ -356,7 +403,8 @@ async function createGermanyMask() {
         }
 
         else if (
-            germany.type === "Feature"
+            germany.type ===
+            "Feature"
         ) {
 
             germanyFeatures = [
@@ -368,6 +416,7 @@ async function createGermanyMask() {
         else {
 
             germanyFeatures = [
+
                 {
                     type: "Feature",
 
@@ -375,12 +424,61 @@ async function createGermanyMask() {
 
                     geometry: germany
                 }
+
             ];
         }
 
 
         // ==================================================
-        // WORLD POLYGON MIT DEUTSCHLAND ALS LOCH
+        // DEUTSCHLAND-GEOMETRIE SAMMELN
+        // ==================================================
+
+        let germanyPolygons = [];
+
+
+        for (
+            const feature
+            of germanyFeatures
+        ) {
+
+            if (
+                !feature.geometry
+            ) {
+
+                continue;
+            }
+
+
+            if (
+                feature.geometry.type ===
+                "Polygon"
+            ) {
+
+                germanyPolygons.push(
+
+                    feature.geometry.coordinates
+
+                );
+
+            }
+
+
+            else if (
+                feature.geometry.type ===
+                "MultiPolygon"
+            ) {
+
+                germanyPolygons.push(
+
+                    ...feature.geometry.coordinates
+
+                );
+            }
+        }
+
+
+        // ==================================================
+        // WELTFLÄCHE
         // ==================================================
 
         const worldRing = [
@@ -397,107 +495,87 @@ async function createGermanyMask() {
         ];
 
 
+        // ==================================================
+        // DEUTSCHLAND ALS LOCH
+        // ==================================================
+
         const holes = [];
 
 
         for (
-            const feature
-            of germanyFeatures
+            const polygon
+            of germanyPolygons
         ) {
 
             if (
-                !feature.geometry
-            ) {
-                continue;
-            }
-
-
-            if (
-                feature.geometry.type ===
-                "Polygon"
+                polygon.length > 0
             ) {
 
-                if (
-                    feature.geometry.coordinates.length > 0
-                ) {
+                holes.push(
 
-                    holes.push(
-                        feature.geometry.coordinates[0]
-                    );
-                }
-            }
+                    polygon[0]
 
-
-            else if (
-                feature.geometry.type ===
-                "MultiPolygon"
-            ) {
-
-                for (
-                    const polygon
-                    of feature.geometry.coordinates
-                ) {
-
-                    if (
-                        polygon.length > 0
-                    ) {
-
-                        holes.push(
-                            polygon[0]
-                        );
-                    }
-                }
+                );
             }
         }
 
 
         // ==================================================
-        // MASKE
+        // AUSLAND GRAU
         // ==================================================
 
-        map.addSource(
-            "germany-mask",
-            {
+        if (
+            holes.length > 0
+        ) {
 
-                type: "geojson",
+            map.addSource(
 
-                data: {
+                "germany-mask",
 
-                    type: "Feature",
+                {
 
-                    properties: {},
+                    type: "geojson",
 
-                    geometry: {
+                    data: {
 
-                        type: "Polygon",
+                        type: "Feature",
 
-                        coordinates: [
+                        properties: {},
 
-                            worldRing,
+                        geometry: {
 
-                            ...holes
-                        ]
+                            type: "Polygon",
+
+                            coordinates: [
+
+                                worldRing,
+
+                                ...holes
+                            ]
+                        }
                     }
                 }
-            }
-        );
+            );
 
 
-        map.addLayer({
+            map.addLayer({
 
-            id: "germany-mask",
+                id: "germany-mask",
 
-            type: "fill",
+                type: "fill",
 
-            source: "germany-mask",
+                source: "germany-mask",
 
-            paint: {
+                paint: {
 
-                "fill-color": "#555555",
+                    "fill-color":
+                        "#555555",
 
-                "fill-opacity": 0.58
-            }
-        });
+                    "fill-opacity":
+                        0.58
+                }
+            });
+        }
 
 
         // ==================================================
@@ -505,7 +583,9 @@ async function createGermanyMask() {
         // ==================================================
 
         map.addSource(
+
             "germany-border",
+
             {
 
                 type: "geojson",
@@ -525,15 +605,17 @@ async function createGermanyMask() {
 
             paint: {
 
-                "line-color": "#222222",
+                "line-color":
+                    "#222222",
 
-                "line-width": 2.5
+                "line-width":
+                    2.5
             }
         });
 
 
         // ==================================================
-        // DEUTSCHLAND EINPASSEN
+        // DEUTSCHLAND AUTOMATISCH EINPASSEN
         // ==================================================
 
         const bounds =
@@ -550,16 +632,16 @@ async function createGermanyMask() {
 
 
             function addCoordinates(
-                coords
+                coordinates
             ) {
 
                 if (
-                    typeof coords[0] ===
+                    typeof coordinates[0] ===
                     "number"
                 ) {
 
                     bounds.extend(
-                        coords
+                        coordinates
                     );
 
                     return;
@@ -567,11 +649,13 @@ async function createGermanyMask() {
 
 
                 for (
-                    const c
-                    of coords
+                    const coordinate
+                    of coordinates
                 ) {
 
-                    addCoordinates(c);
+                    addCoordinates(
+                        coordinate
+                    );
                 }
             }
 
@@ -582,18 +666,28 @@ async function createGermanyMask() {
         }
 
 
-        map.fitBounds(
-            bounds,
-            {
-                padding: 30
-            }
-        );
+        if (
+            !bounds.isEmpty()
+        ) {
+
+            map.fitBounds(
+
+                bounds,
+
+                {
+
+                    padding: 30
+                }
+            );
+        }
 
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
-            "Deutschlandmaske:",
+            "Fehler bei Deutschlandmaske:",
             error
         );
     }
@@ -601,7 +695,7 @@ async function createGermanyMask() {
 
 
 // ==========================================================
-// MARKER ERZEUGEN
+// WARNDREIECK ERZEUGEN
 // ==========================================================
 
 function createAccidentMarker(
@@ -621,38 +715,65 @@ function createAccidentMarker(
 
 
     element.className =
+
         ended
+
             ? "accident-marker accident-ended"
+
             : "accident-marker accident-current";
 
+
+    /*
+     * WICHTIG:
+     *
+     * anchor = bottom
+     *
+     * Damit liegt der untere Mittelpunkt
+     * des HTML-Elements exakt auf der
+     * angegebenen Koordinate.
+     *
+     * Das Dreieck selbst ist so konstruiert,
+     * dass seine Spitze genau dort liegt.
+     */
 
     const marker =
         new maplibregl.Marker({
 
-            element: element,
+            element:
+                element,
 
-            anchor: "bottom"
-        })
-
-        .setLngLat([
-
-            Number(
-                accident.longitude
-            ),
-
-            Number(
-                accident.latitude
-            )
-        ]);
+            anchor:
+                "bottom"
+        });
 
 
-    // Mouseover
+    marker.setLngLat([
+
+        Number(
+            accident.longitude
+        ),
+
+        Number(
+            accident.latitude
+        )
+
+    ]);
+
+
+    // ======================================================
+    // MOUSEOVER
+    // ======================================================
+
     element.addEventListener(
+
         "mouseenter",
+
         () => {
 
             showAccidentPopup(
+
                 marker,
+
                 accident
             );
         }
@@ -660,7 +781,9 @@ function createAccidentMarker(
 
 
     element.addEventListener(
+
         "mouseleave",
+
         () => {
 
             if (
@@ -668,12 +791,17 @@ function createAccidentMarker(
             ) {
 
                 marker._popup.remove();
+
+                marker._popup =
+                    null;
             }
         }
     );
 
 
-    marker.addTo(map);
+    marker.addTo(
+        map
+    );
 
 
     return marker;
@@ -791,21 +919,27 @@ function showAccidentPopup(
     const popup =
         new maplibregl.Popup({
 
-            closeButton: false,
+            closeButton:
+                false,
 
-            closeOnClick: false,
+            closeOnClick:
+                false,
 
-            offset: 25
-        })
+            offset:
+                8
+        });
 
+
+    popup
         .setLngLat(
             marker.getLngLat()
         )
-
-        .setHTML(html);
-
-
-    popup.addTo(map);
+        .setHTML(
+            html
+        )
+        .addTo(
+            map
+        );
 
 
     marker._popup =
@@ -814,7 +948,7 @@ function showAccidentPopup(
 
 
 // ==========================================================
-// DATUM
+// DATUM FORMATIEREN
 // ==========================================================
 
 function formatDate(
@@ -828,7 +962,9 @@ function formatDate(
 
 
     const date =
-        new Date(value);
+        new Date(
+            value
+        );
 
 
     if (
@@ -847,9 +983,11 @@ function formatDate(
 
         {
 
-            dateStyle: "short",
+            dateStyle:
+                "short",
 
-            timeStyle: "medium"
+            timeStyle:
+                "medium"
         }
     );
 }
@@ -902,7 +1040,7 @@ function escapeHtml(
 
 
 // ==========================================================
-// MARKER LÖSCHEN
+// MARKER ENTFERNEN
 // ==========================================================
 
 function clearAccidentMarkers() {
@@ -911,6 +1049,17 @@ function clearAccidentMarkers() {
         const marker
         of accidentMarkers
     ) {
+
+        if (
+            marker._popup
+        ) {
+
+            marker._popup.remove();
+
+            marker._popup =
+                null;
+        }
+
 
         marker.remove();
     }
@@ -948,16 +1097,22 @@ async function loadAccidents() {
                 ),
 
                 {
-                    cache: "no-store"
+
+                    cache:
+                        "no-store"
                 }
             );
 
 
-        if (!response.ok) {
+        if (
+            !response.ok
+        ) {
 
             throw new Error(
+
                 "HTTP " +
                 response.status
+
             );
         }
 
@@ -966,20 +1121,30 @@ async function loadAccidents() {
             await response.json();
 
 
-        if (!data.success) {
+        if (
+            !data.success
+        ) {
 
             throw new Error(
+
                 data.error ||
                 "API-Fehler"
+
             );
         }
 
+
+        // Alte Marker löschen
 
         clearAccidentMarkers();
 
 
         let markerCount = 0;
 
+
+        // ==================================================
+        // NEUE MARKER
+        // ==================================================
 
         for (
             const accident
@@ -1026,15 +1191,22 @@ async function loadAccidents() {
         }
 
 
+        // ==================================================
+        // STATUS
+        // ==================================================
+
         if (
-            currentMode === "current"
+            currentMode ===
+            "current"
         ) {
 
             status.textContent =
                 markerCount +
                 " aktuelle Unfallmeldungen";
 
-        } else {
+        }
+
+        else {
 
             status.textContent =
                 markerCount +
@@ -1042,9 +1214,13 @@ async function loadAccidents() {
         }
 
 
-    } catch (error) {
+    }
 
-        console.error(error);
+    catch (error) {
+
+        console.error(
+            error
+        );
 
 
         status.textContent =
@@ -1066,18 +1242,28 @@ function setMode(
 
 
     document
-        .getElementById("currentButton")
+        .getElementById(
+            "currentButton"
+        )
         .classList.toggle(
+
             "active",
-            mode === "current"
+
+            mode ===
+                "current"
         );
 
 
     document
-        .getElementById("dayButton")
+        .getElementById(
+            "dayButton"
+        )
         .classList.toggle(
+
             "active",
-            mode === "24h"
+
+            mode ===
+                "24h"
         );
 
 
@@ -1090,18 +1276,36 @@ function setMode(
 // ==========================================================
 
 document
-    .getElementById("currentButton")
+    .getElementById(
+        "currentButton"
+    )
     .addEventListener(
+
         "click",
-        () => setMode("current")
+
+        () => {
+
+            setMode(
+                "current"
+            );
+        }
     );
 
 
 document
-    .getElementById("dayButton")
+    .getElementById(
+        "dayButton"
+    )
     .addEventListener(
+
         "click",
-        () => setMode("24h")
+
+        () => {
+
+            setMode(
+                "24h"
+            );
+        }
     );
 
 
@@ -1110,7 +1314,9 @@ document
 // ==========================================================
 
 map.on(
+
     "load",
+
     async () => {
 
         await createGermanyMask();
@@ -1121,7 +1327,7 @@ map.on(
 
 
 // ==========================================================
-// ALLE 5 MINUTEN
+// ALLE 5 MINUTEN AKTUALISIEREN
 // ==========================================================
 
 setInterval(
@@ -1131,6 +1337,7 @@ setInterval(
     5 * 60 * 1000
 
 );
+
 
 </script>
 
