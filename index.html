@@ -214,7 +214,13 @@
     <button
         id="dayButton"
     >
-        LETZTE 24 H
+        24h
+    </button>
+
+    <button
+        id="allButton"
+    >
+        ALLE
     </button>
 
     <button
@@ -234,7 +240,7 @@
     hidden
 >
     <div class="download-box">
-        <b>Datenbank herunterladen</b>
+        <b id="dialogTitle">Datenbank herunterladen</b>
 
         <input
             id="downloadPassword"
@@ -274,6 +280,9 @@
 
 const API_URL =
     "https://accde-api.r73d.workers.dev/api/accidents";
+
+const ALL_URL =
+    "https://accde-api.r73d.workers.dev/api/accidents/all";
 
 let currentMode = "current";
 
@@ -907,129 +916,77 @@ function showAccidentPopup(
 
 
 // ==========================================================
-// UNFÄLLE LADEN
+// UNFÄLLE DARSTELLEN
+// ==========================================================
+
+function displayAccidents(accidents, mode) {
+
+    currentMode = mode;
+
+    const status = document.getElementById("status");
+    const geojson = accidentsToGeoJSON(accidents);
+
+    const source = map.getSource("accidents");
+
+    if (source) {
+        source.setData(geojson);
+    } else {
+        createAccidentLayers();
+        map.getSource("accidents").setData(geojson);
+    }
+
+    const count = geojson.features.length;
+
+    if (mode === "current") {
+        status.textContent = count + " aktuelle Unfallmeldungen";
+    } else if (mode === "24h") {
+        status.textContent = count + " Unfallmeldungen der letzten 24 Stunden";
+    } else {
+        status.textContent = count + " Meldungen aus der gesamten Datenbank";
+    }
+
+    updateModeButtons(mode);
+}
+
+
+// ==========================================================
+// ÖFFENTLICHE ANSICHTEN LADEN (AKTUELL / 24H)
 // ==========================================================
 
 async function loadAccidents() {
 
-    const status =
-        document.getElementById(
-            "status"
-        );
+    // Die passwortgeschützte "Alle"-Ansicht ist ein Snapshot.
+    // Der öffentliche Fünf-Minuten-Refresh darf sie nicht durch die
+    // ungeschützte Aktuell-Ansicht ersetzen.
+    if (currentMode === "all") {
+        return;
+    }
 
+    const status = document.getElementById("status");
 
     try {
+        status.textContent = "Lade Unfallmeldungen …";
 
-        status.textContent =
-            "Lade Unfallmeldungen …";
-
-
-        const response =
-            await fetch(
-
-                API_URL +
-                "?mode=" +
-                encodeURIComponent(
-                    currentMode
-                ),
-
-                {
-                    cache:
-                        "no-store"
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "HTTP " +
-                response.status
-            );
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (!data.success) {
-
-            throw new Error(
-                data.error ||
-                "API-Fehler"
-            );
-        }
-
-
-        const geojson =
-            accidentsToGeoJSON(
-                data.accidents
-            );
-
-
-        // ==================================================
-        // SOURCE AKTUALISIEREN
-        // ==================================================
-
-        const source =
-            map.getSource(
-                "accidents"
-            );
-
-
-        if (source) {
-
-            source.setData(
-                geojson
-            );
-
-        } else {
-
-            createAccidentLayers();
-
-            map.getSource(
-                "accidents"
-            ).setData(
-                geojson
-            );
-        }
-
-
-        // ==================================================
-        // STATUS
-        // ==================================================
-
-        const count =
-            geojson.features.length;
-
-
-        if (
-            currentMode ===
-            "current"
-        ) {
-
-            status.textContent =
-                count +
-                " aktuelle Unfallmeldungen";
-
-        } else {
-
-            status.textContent =
-                count +
-                " Unfallmeldungen der letzten 24 Stunden";
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            error
+        const response = await fetch(
+            API_URL + "?mode=" + encodeURIComponent(currentMode),
+            { cache: "no-store" }
         );
 
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
 
-        status.textContent =
-            "Fehler beim Laden der Unfallmeldungen";
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || "API-Fehler");
+        }
+
+        displayAccidents(data.accidents, currentMode);
+
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Fehler beim Laden der Unfallmeldungen";
     }
 }
 
@@ -1142,234 +1099,158 @@ function closePopups() {
 
 
 // ==========================================================
-// MODUS WECHSELN
+// BUTTON-ZUSTÄNDE UND MODUS WECHSELN
 // ==========================================================
 
-function setMode(
-    mode
-) {
+function updateModeButtons(mode) {
+    document.getElementById("currentButton").classList.toggle("active", mode === "current");
+    document.getElementById("dayButton").classList.toggle("active", mode === "24h");
+    document.getElementById("allButton").classList.toggle("active", mode === "all");
+}
 
-    currentMode =
-        mode;
-
-
-    document
-        .getElementById(
-            "currentButton"
-        )
-        .classList.toggle(
-            "active",
-            mode === "current"
-        );
-
-
-    document
-        .getElementById(
-            "dayButton"
-        )
-        .classList.toggle(
-            "active",
-            mode === "24h"
-        );
-
-
+function setMode(mode) {
+    currentMode = mode;
+    updateModeButtons(mode);
     closePopups();
-
     loadAccidents();
 }
 
-
-// ==========================================================
-// BUTTONS
-// ==========================================================
-
-document
-    .getElementById(
-        "currentButton"
-    )
-    .addEventListener(
-        "click",
-        () => setMode("current")
-    );
-
-
-document
-    .getElementById(
-        "dayButton"
-    )
-    .addEventListener(
-        "click",
-        () => setMode("24h")
-    );
+document.getElementById("currentButton").addEventListener("click", () => setMode("current"));
+document.getElementById("dayButton").addEventListener("click", () => setMode("24h"));
 
 
 // ==========================================================
-// DATENBANK-DOWNLOAD
+// PASSWORTGESCHÜTZTES SQL-BACKUP UND ANSICHT "ALLE"
 // ==========================================================
 
-const DOWNLOAD_URL =
-    "https://accde-api.r73d.workers.dev/download";
+const DOWNLOAD_URL = "https://accde-api.r73d.workers.dev/download";
+const downloadDialog = document.getElementById("downloadDialog");
+const downloadPassword = document.getElementById("downloadPassword");
+const downloadError = document.getElementById("downloadError");
+const dialogTitle = document.getElementById("dialogTitle");
+const confirmButton = document.getElementById("confirmDownload");
+let passwordDialogAction = "download";
 
-const downloadDialog =
-    document.getElementById(
-        "downloadDialog"
-    );
+function openPasswordDialog(action) {
+    passwordDialogAction = action;
+    downloadPassword.value = "";
+    downloadError.textContent = "";
 
-const downloadPassword =
-    document.getElementById(
-        "downloadPassword"
-    );
-
-const downloadError =
-    document.getElementById(
-        "downloadError"
-    );
-
-document
-    .getElementById(
-        "downloadButton"
-    )
-    .addEventListener(
-        "click",
-        () => {
-            downloadPassword.value = "";
-            downloadError.textContent = "";
-            downloadDialog.hidden = false;
-            downloadPassword.focus();
-        }
-    );
-
-document
-    .getElementById(
-        "cancelDownload"
-    )
-    .addEventListener(
-        "click",
-        () => {
-            downloadDialog.hidden = true;
-        }
-    );
-
-downloadPassword.addEventListener(
-    "keydown",
-    (event) => {
-        if (event.key === "Enter") {
-            document
-                .getElementById(
-                    "confirmDownload"
-                )
-                .click();
-        }
-
-        if (event.key === "Escape") {
-            downloadDialog.hidden = true;
-        }
+    if (action === "all") {
+        dialogTitle.textContent = "Alle Meldungen anzeigen";
+        confirmButton.textContent = "Anzeigen";
+    } else {
+        dialogTitle.textContent = "Datenbank herunterladen";
+        confirmButton.textContent = "Herunterladen";
     }
+
+    downloadDialog.hidden = false;
+    downloadPassword.focus();
+}
+
+document.getElementById("downloadButton").addEventListener(
+    "click",
+    () => openPasswordDialog("download")
 );
 
-document
-    .getElementById(
-        "confirmDownload"
-    )
-    .addEventListener(
-        "click",
-        async () => {
+document.getElementById("allButton").addEventListener(
+    "click",
+    () => openPasswordDialog("all")
+);
 
-            const password =
-                downloadPassword.value;
+document.getElementById("cancelDownload").addEventListener("click", () => {
+    downloadDialog.hidden = true;
+    downloadPassword.value = "";
+});
 
-            if (!password) {
-                downloadError.textContent =
-                    "Bitte Passwort eingeben.";
-                return;
+downloadPassword.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        confirmButton.click();
+    }
+    if (event.key === "Escape") {
+        downloadDialog.hidden = true;
+        downloadPassword.value = "";
+    }
+});
+
+confirmButton.addEventListener("click", async () => {
+    const password = downloadPassword.value;
+
+    if (!password) {
+        downloadError.textContent = "Bitte Passwort eingeben.";
+        return;
+    }
+
+    const action = passwordDialogAction;
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Lade …";
+    downloadError.textContent = "";
+
+    try {
+        if (action === "all") {
+            const response = await fetch(ALL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                cache: "no-store",
+                body: JSON.stringify({ password })
+            });
+
+            if (response.status === 401) {
+                throw new Error("Falsches Passwort.");
+            }
+            if (!response.ok) {
+                throw new Error("Alle Meldungen konnten nicht geladen werden (HTTP " + response.status + ").");
             }
 
-            const button =
-                document.getElementById(
-                    "confirmDownload"
-                );
-
-            button.disabled = true;
-            button.textContent = "Lade …";
-            downloadError.textContent = "";
-
-            try {
-
-                const response =
-                    await fetch(
-                        DOWNLOAD_URL,
-                        {
-                            method: "POST",
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-                            body: JSON.stringify({
-                                password: password
-                            })
-                        }
-                    );
-
-                if (!response.ok) {
-
-                    if (response.status === 401) {
-                        throw new Error(
-                            "Falsches Passwort."
-                        );
-                    }
-
-                    throw new Error(
-                        "Download fehlgeschlagen (HTTP " +
-                        response.status +
-                        ")."
-                    );
-                }
-
-                const blob =
-                    await response.blob();
-
-                const url =
-                    URL.createObjectURL(blob);
-
-                const link =
-                    document.createElement("a");
-
-                const date =
-                    new Date()
-                        .toISOString()
-                        .slice(0, 10);
-
-                link.href = url;
-                link.download =
-                    "accde_backup_" +
-                    date +
-                    ".sql";
-
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-
-                URL.revokeObjectURL(url);
-
-                downloadDialog.hidden = true;
-
-            } catch (error) {
-
-                console.error(
-                    "SQL-Download:",
-                    error
-                );
-
-                downloadError.textContent =
-                    error.message;
-
-            } finally {
-
-                button.disabled = false;
-                button.textContent = "Herunterladen";
+            const data = await response.json();
+            if (!data.success || !Array.isArray(data.accidents)) {
+                throw new Error(data.error || "Ungültige Antwort vom Server.");
             }
+
+            closePopups();
+            displayAccidents(data.accidents, "all");
+            downloadDialog.hidden = true;
+            downloadPassword.value = "";
+
+        } else {
+            const response = await fetch(DOWNLOAD_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                cache: "no-store",
+                body: JSON.stringify({ password })
+            });
+
+            if (response.status === 401) {
+                throw new Error("Falsches Passwort.");
+            }
+            if (!response.ok) {
+                throw new Error("Download fehlgeschlagen (HTTP " + response.status + ").");
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const date = new Date().toISOString().slice(0, 10);
+
+            link.href = objectUrl;
+            link.download = "accde_backup_" + date + ".sql";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+            downloadDialog.hidden = true;
+            downloadPassword.value = "";
         }
-    );
+
+    } catch (error) {
+        console.error("Passwortgeschützte Aktion:", error);
+        downloadError.textContent = error.message || "Unbekannter Fehler.";
+    } finally {
+        confirmButton.disabled = false;
+        confirmButton.textContent = passwordDialogAction === "all" ? "Anzeigen" : "Herunterladen";
+    }
+});
 
 
 // ==========================================================
